@@ -1,0 +1,1220 @@
+<title>Carnet de poids</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    color-scheme: light;
+    --bg:        #eef1ef;
+    --surface:   #ffffff;
+    --surface-2: #f6f8f7;
+    --line:      #dde4e1;
+    --line-soft: #e9eeec;
+    --ink:       #0f1c18;
+    --ink-2:     #4a5a55;
+    --muted:     #7b8a84;
+    --accent:    #0c6a5e;
+    --accent-ink:#0a564c;
+    --on-accent: #ffffff;
+    --band-out:  rgba(12, 106, 94, .07);
+    --band-in:   rgba(12, 106, 94, .13);
+    --ref-line:  #a9b6b1;
+    --good:      #1b6b3a;
+    --warn:      #8a5a06;
+    --shadow:    0 1px 2px rgba(15, 28, 24, .06), 0 8px 24px -12px rgba(15, 28, 24, .18);
+
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg:        #0c1210;
+      --surface:   #141c1a;
+      --surface-2: #1a2422;
+      --line:      #253230;
+      --line-soft: #1e2927;
+      --ink:       #e8efec;
+      --ink-2:     #a7b6b1;
+      --muted:     #7d8c87;
+      --accent:    #3fb8a4;
+      --accent-ink:#5fcdba;
+      --on-accent: #06110f;
+      --band-out:  rgba(63, 184, 164, .09);
+      --band-in:   rgba(63, 184, 164, .16);
+      --ref-line:  #55645f;
+      --good:      #5cc47f;
+      --warn:      #d0a049;
+      --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg:        #0c1210;
+    --surface:   #141c1a;
+    --surface-2: #1a2422;
+    --line:      #253230;
+    --line-soft: #1e2927;
+    --ink:       #e8efec;
+    --ink-2:     #a7b6b1;
+    --muted:     #7d8c87;
+    --accent:    #3fb8a4;
+    --accent-ink:#5fcdba;
+    --on-accent: #06110f;
+    --band-out:  rgba(63, 184, 164, .09);
+    --band-in:   rgba(63, 184, 164, .16);
+    --ref-line:  #55645f;
+    --good:      #5cc47f;
+    --warn:      #d0a049;
+    --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 20px 16px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 2px 0; }
+  .masthead h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -.01em;
+  }
+  .masthead .who {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+  .card > h2, .chart-head h2 {
+    margin: 0 0 14px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--muted);
+  }
+
+  /* ---------- hero ---------- */
+  .hero .who-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .hero .baby-name { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+  .hero .baby-age { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); }
+
+  .figure { display: flex; align-items: baseline; gap: 8px; }
+  .figure .val {
+    font-size: 58px;
+    line-height: .95;
+    font-weight: 660;
+    letter-spacing: -.035em;
+  }
+  .figure .unit { font-size: 20px; font-weight: 600; color: var(--ink-2); }
+  .figure-sub {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11.5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink-2);
+  }
+  .chip.accent { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); color: var(--accent-ink); }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 18px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .stat { background: var(--surface); padding: 11px 12px 12px; }
+  .stat .k {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted);
+  }
+  .stat .v { font-size: 20px; font-weight: 620; letter-spacing: -.02em; margin-top: 3px; }
+  .stat .n { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat .v.pos { color: var(--good); }
+  .stat .v.neg { color: var(--warn); }
+
+  .note {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-left: 2px solid var(--accent);
+    background: var(--surface-2);
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+
+  /* ---------- chart ---------- */
+  .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .seg {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .seg button {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 4px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .plot { position: relative; }
+  .plot svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+
+  .grid-line { stroke: var(--line-soft); stroke-width: 1; }
+  .axis-line { stroke: var(--line); stroke-width: 1; }
+  .tick-text { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); }
+  .band-out { fill: var(--band-out); }
+  .band-in  { fill: var(--band-in); }
+  .ref-med  { stroke: var(--ref-line); stroke-width: 1.5; fill: none; }
+  .ref-label{ font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+  .baby-line{ stroke: var(--accent); stroke-width: 2; fill: none; stroke-linejoin: round; stroke-linecap: round; }
+  .baby-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+  .end-label{ font-family: var(--mono); font-size: 11px; font-weight: 600; fill: var(--ink); }
+  .cross    { stroke: var(--ref-line); stroke-width: 1; }
+
+  .tip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 7px 9px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s;
+    z-index: 3;
+  }
+  .tip.on { opacity: 1; }
+  .tip .t-d { color: var(--muted); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .sw { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); }
+  .sw.band { height: 10px; width: 14px; border-radius: 3px; background: var(--band-in); border: 1px solid var(--band-out); }
+  .sw.med { background: var(--ref-line); height: 2px; }
+
+  /* ---------- forms ---------- */
+  form { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 150px; min-width: 0; }
+  label {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted);
+  }
+  input, select {
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 11px;
+    width: 100%;
+    min-width: 0;
+  }
+  input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  input[type="number"] { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .btn {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 11px 16px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: var(--accent);
+    color: var(--on-accent);
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--accent-ink); }
+  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .btn.ghost { background: transparent; color: var(--ink-2); border-color: var(--line); font-weight: 500; }
+  .btn.ghost:hover { background: var(--surface-2); color: var(--ink); }
+  .btn.small { font-size: 13px; padding: 7px 12px; }
+
+  .err { color: var(--warn); font-size: 13px; }
+  .err:empty { display: none; }
+
+  /* ---------- table ---------- */
+  .tablewrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 9px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; padding-left: 0; }
+  th:last-child, td:last-child { padding-right: 0; width: 1%; }
+  th {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+    border-bottom-color: var(--line);
+  }
+  td { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  td.dim { color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  .del {
+    background: transparent; border: 0; cursor: pointer;
+    color: var(--muted); font-size: 16px; line-height: 1; padding: 4px 6px; border-radius: 6px;
+  }
+  .del:hover { color: var(--warn); background: var(--surface-2); }
+  .del:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .empty { color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 500px) {
+    th:nth-child(5), td:nth-child(5) { display: none; }
+    th, td { padding: 9px 5px; }
+    td { font-size: 12.5px; }
+    /* keep the delete control reachable when the row scrolls */
+    th:last-child, td:last-child { position: sticky; right: 0; background: var(--surface); }
+  }
+
+  details.tools { border-top: 1px solid var(--line-soft); padding-top: 12px; margin-top: 4px; }
+  details.tools summary {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted); cursor: pointer; list-style: none;
+  }
+  details.tools summary::-webkit-details-marker { display: none; }
+  details.tools summary::before { content: "+ "; }
+  details.tools[open] summary::before { content: "– "; }
+  textarea {
+    width: 100%; margin-top: 10px; min-height: 110px;
+    font-family: var(--mono); font-size: 11.5px;
+    color: var(--ink); background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 9px; padding: 10px;
+    resize: vertical;
+  }
+
+  footer {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--muted);
+    padding: 0 4px;
+  }
+  footer strong { color: var(--ink-2); font-weight: 600; }
+
+  .hidden { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+  @media (min-width: 560px) {
+    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .figure .val { font-size: 68px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Carnet de poids</h1>
+    <span class="who">Courbes OMS 0–24&nbsp;mois</span>
+  </div>
+
+  <!-- ============ SETUP (première visite) ============ -->
+  <section class="card" id="setup-card">
+    <h2>Le bébé</h2>
+    <form id="setup-form">
+      <div class="row">
+        <div class="field" style="flex: 2 1 200px;">
+          <label for="s-name">Prénom</label>
+          <input id="s-name" type="text" autocomplete="off" placeholder="Léa" />
+        </div>
+        <div class="field">
+          <label for="s-sex">Sexe</label>
+          <select id="s-sex">
+            <option value="f">Fille</option>
+            <option value="m">Garçon</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="s-birth">Date de naissance</label>
+          <input id="s-birth" type="date" required />
+        </div>
+        <div class="field">
+          <label for="s-bw">Poids de naissance (kg)</label>
+          <input id="s-bw" type="number" step="0.01" min="0.4" max="8" inputmode="decimal" placeholder="3,25" />
+        </div>
+      </div>
+      <p class="err" id="setup-err" role="alert"></p>
+      <div class="row">
+        <button class="btn" type="submit" id="setup-submit">Commencer</button>
+        <button class="btn ghost" type="button" id="setup-cancel" hidden>Annuler</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ HERO ============ -->
+  <section class="card hero hidden" id="hero-card">
+    <div class="who-line">
+      <span class="baby-name" id="h-name"></span>
+      <span class="baby-age" id="h-age"></span>
+    </div>
+    <div class="figure">
+      <span class="val" id="h-kg">—</span>
+      <span class="unit">kg</span>
+    </div>
+    <div class="figure-sub" id="h-sub"></div>
+    <div class="chips" id="h-chips"></div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="k">Depuis la naissance</div>
+        <div class="v" id="st-birth">—</div>
+        <div class="n" id="st-birth-n"></div>
+      </div>
+      <div class="stat">
+        <div class="k">Dernière prise</div>
+        <div class="v" id="st-last">—</div>
+        <div class="n" id="st-last-n"></div>
+      </div>
+      <div class="stat">
+        <div class="k">Rythme</div>
+        <div class="v" id="st-rate">—</div>
+        <div class="n" id="st-rate-n"></div>
+      </div>
+      <div class="stat">
+        <div class="k">Percentile estimé</div>
+        <div class="v" id="st-pct">—</div>
+        <div class="n" id="st-pct-n"></div>
+      </div>
+    </div>
+
+    <div class="note hidden" id="h-note"></div>
+  </section>
+
+  <!-- ============ CHART ============ -->
+  <section class="card hidden" id="chart-card">
+    <div class="chart-head">
+      <h2 style="margin:0">Courbe de poids</h2>
+      <div class="seg" id="range-seg" role="group" aria-label="Période affichée">
+        <button type="button" data-range="auto" aria-pressed="true">Auto</button>
+        <button type="button" data-range="6" aria-pressed="false">6 m</button>
+        <button type="button" data-range="12" aria-pressed="false">12 m</button>
+        <button type="button" data-range="24" aria-pressed="false">24 m</button>
+      </div>
+    </div>
+    <div class="plot" id="plot">
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw"></i> Poids mesuré</span>
+      <span><i class="sw med"></i> Médiane OMS</span>
+      <span><i class="sw band"></i> Zone P3–P97</span>
+    </div>
+  </section>
+
+  <!-- ============ ADD ============ -->
+  <section class="card hidden" id="add-card">
+    <h2>Nouvelle pesée</h2>
+    <form id="add-form">
+      <div class="row">
+        <div class="field">
+          <label for="a-date">Date</label>
+          <input id="a-date" type="date" required />
+        </div>
+        <div class="field">
+          <label for="a-weight">Poids</label>
+          <input id="a-weight" type="number" step="0.001" min="0.2" inputmode="decimal" required placeholder="4,32" />
+        </div>
+        <div class="field" style="flex: 0 0 auto;">
+          <label for="a-unit">Unité</label>
+          <select id="a-unit" style="width: auto;">
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+          </select>
+        </div>
+      </div>
+      <p class="err" id="add-err" role="alert"></p>
+      <div class="row">
+        <button class="btn" type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section class="card hidden" id="hist-card">
+    <h2>Historique</h2>
+    <div class="tablewrap">
+      <table id="hist-table">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Âge</th>
+            <th scope="col">Poids</th>
+            <th scope="col">Écart</th>
+            <th scope="col">g/j</th>
+            <th scope="col"><span aria-hidden="true"></span></th>
+          </tr>
+        </thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+    <p class="empty hidden" id="hist-empty">Aucune pesée enregistrée pour l’instant.</p>
+
+    <details class="tools">
+      <summary>Réglages et données</summary>
+      <div class="row" style="margin-top: 12px;">
+        <button class="btn ghost small" type="button" id="btn-edit">Modifier le profil</button>
+        <button class="btn ghost small" type="button" id="btn-copy">Copier les données</button>
+        <button class="btn ghost small" type="button" id="btn-import">Importer</button>
+        <button class="btn ghost small" type="button" id="btn-reset">Tout effacer</button>
+      </div>
+      <textarea id="data-box" spellcheck="false" aria-label="Données au format JSON"></textarea>
+      <p class="err" id="tool-msg" role="status"></p>
+    </details>
+  </section>
+
+  <footer>
+    <strong>Repère, pas diagnostic.</strong> Les courbes affichées sont les standards
+    de croissance de l’OMS (poids-pour-âge, valeurs arrondies à 100&nbsp;g) et le percentile
+    est une estimation. Un poids qui sort de la zone P3–P97, une cassure de la courbe ou
+    un doute se discutent avec le pédiatre ou la sage-femme — eux seuls interprètent.
+    Les données restent sur cet appareil, dans ce navigateur&nbsp;; rien n’est envoyé ailleurs.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ================= WHO weight-for-age (kg) ================= */
+  /* Ages (months): 0..12, then 15, 18, 21, 24 */
+  var AGES = [0,1,2,3,4,5,6,7,8,9,10,11,12,15,18,21,24];
+
+  var WHO = {
+    m: {
+      p3:  [2.5,3.4,4.3,5.0,5.6,6.0,6.4,6.7,6.9,7.1,7.4,7.6,7.7,8.3,8.8,9.2,9.7],
+      p15: [2.9,3.9,4.9,5.7,6.2,6.7,7.1,7.4,7.7,8.0,8.2,8.4,8.6,9.2,9.8,10.3,10.8],
+      p50: [3.3,4.5,5.6,6.4,7.0,7.5,7.9,8.3,8.6,8.9,9.2,9.4,9.6,10.3,10.9,11.5,12.2],
+      p85: [3.9,5.1,6.3,7.2,7.8,8.4,8.8,9.2,9.6,9.9,10.2,10.5,10.8,11.5,12.2,12.9,13.6],
+      p97: [4.4,5.8,7.1,8.0,8.7,9.3,9.8,10.3,10.7,11.0,11.4,11.7,12.0,12.8,13.7,14.5,15.3]
+    },
+    f: {
+      p3:  [2.4,3.2,3.9,4.5,5.0,5.4,5.7,6.0,6.3,6.5,6.7,6.9,7.0,7.6,8.1,8.6,9.0],
+      p15: [2.8,3.6,4.5,5.1,5.6,6.1,6.4,6.7,7.0,7.3,7.5,7.7,7.9,8.5,9.1,9.6,10.2],
+      p50: [3.2,4.2,5.1,5.8,6.4,6.9,7.3,7.6,7.9,8.2,8.5,8.7,8.9,9.6,10.2,10.9,11.5],
+      p85: [3.7,4.8,5.9,6.7,7.3,7.8,8.2,8.6,9.0,9.3,9.6,9.9,10.1,10.9,11.6,12.3,13.0],
+      p97: [4.2,5.5,6.6,7.5,8.2,8.8,9.3,9.8,10.2,10.5,10.9,11.2,11.5,12.4,13.2,14.0,14.8]
+    }
+  };
+
+  /* Expected daily gain (g/day) by age band — indicative pediatric reference. */
+  var GAIN_REF = [
+    { to: 3,  lo: 25, hi: 35 },
+    { to: 6,  lo: 15, hi: 20 },
+    { to: 9,  lo: 10, hi: 12 },
+    { to: 12, lo: 6,  hi: 9  },
+    { to: 24, lo: 4,  hi: 7  }
+  ];
+
+  var DAYS_PER_MONTH = 30.4375;
+  var MAX_MONTHS = 24;
+
+  /* ================= helpers ================= */
+
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+  /* Interpolate a WHO curve at an arbitrary age in months. */
+  function refAt(sex, key, months) {
+    var table = WHO[sex][key];
+    var m = clamp(months, 0, MAX_MONTHS);
+    for (var i = 0; i < AGES.length - 1; i++) {
+      if (m <= AGES[i + 1]) {
+        var t = (m - AGES[i]) / (AGES[i + 1] - AGES[i]);
+        return table[i] + t * (table[i + 1] - table[i]);
+      }
+    }
+    return table[table.length - 1];
+  }
+
+  /* Normal CDF via Abramowitz & Stegun 7.1.26 erf approximation. */
+  function normCdf(z) {
+    var s = z < 0 ? -1 : 1;
+    var x = Math.abs(z) / Math.SQRT2;
+    var t = 1 / (1 + 0.3275911 * x);
+    var y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return 0.5 * (1 + s * y);
+  }
+
+  /* Estimate percentile from P3 / P50 / P97 (P97 sits at ≈ +1.881 SD). */
+  function percentile(sex, months, kg) {
+    if (months > MAX_MONTHS + 0.5) return null;
+    var p50 = refAt(sex, "p50", months);
+    var spread = kg >= p50
+      ? refAt(sex, "p97", months) - p50
+      : p50 - refAt(sex, "p3", months);
+    if (spread <= 0) return null;
+    var z = 1.881 * (kg - p50) / spread;
+    return clamp(normCdf(z) * 100, 0.1, 99.9);
+  }
+
+  function gainRef(months) {
+    for (var i = 0; i < GAIN_REF.length; i++) {
+      if (months < GAIN_REF[i].to) return GAIN_REF[i];
+    }
+    return null;
+  }
+
+  /* --- dates: parse/format as local calendar days, never UTC --- */
+  function parseDate(s) {
+    var p = String(s).split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+  function toISO(d) {
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+  function daysBetween(a, b) {
+    return Math.round((parseDate(b) - parseDate(a)) / 86400000);
+  }
+  var fmtDate = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
+  function shortDate(iso) { return fmtDate.format(parseDate(iso)); }
+
+  function nf(v, dec) {
+    return v.toLocaleString("fr-FR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  function grams(kg) { return nf(Math.round(kg * 1000), 0) + " g"; }
+  function fmtKg(kg) {
+    return kg.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+  }
+  function signed(g) { return (g > 0 ? "+" : g < 0 ? "−" : "") + nf(Math.abs(Math.round(g)), 0); }
+
+  /* "3 mois 12 jours" / "18 jours" */
+  function ageLabel(days) {
+    if (days < 0) return "—";
+    if (days < 31) return days + (days > 1 ? " jours" : " jour");
+    var months = Math.floor(days / DAYS_PER_MONTH);
+    var rest = days - Math.round(months * DAYS_PER_MONTH);
+    if (rest <= 0) return months + " mois";
+    return months + " mois " + rest + (rest > 1 ? " jours" : " jour");
+  }
+  function ageShort(days) {
+    if (days < 31) return days + " j";
+    return Math.floor(days / DAYS_PER_MONTH) + " m " + Math.max(0, days - Math.round(Math.floor(days / DAYS_PER_MONTH) * DAYS_PER_MONTH)) + " j";
+  }
+
+  /* ================= state ================= */
+
+  var KEY = "carnet-de-poids/v1";
+  var memoryOnly = false;
+  var state = { profile: null, entries: [] };
+
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.profile) state = parsed;
+      }
+    } catch (e) {
+      memoryOnly = true;
+    }
+  }
+  function save() {
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {
+      memoryOnly = true;
+    }
+  }
+
+  /* Measurements sorted by date, birth weight always first. */
+  function series() {
+    var out = state.entries.slice();
+    if (state.profile && state.profile.birthWeight) {
+      out.push({ id: "birth", date: state.profile.birthDate, kg: state.profile.birthWeight, birth: true });
+    }
+    out.sort(function (a, b) {
+      if (a.date === b.date) return a.birth ? -1 : b.birth ? 1 : 0;
+      return a.date < b.date ? -1 : 1;
+    });
+    return out.map(function (e) {
+      var d = daysBetween(state.profile.birthDate, e.date);
+      return { id: e.id, date: e.date, kg: e.kg, birth: !!e.birth, days: d, months: d / DAYS_PER_MONTH };
+    });
+  }
+
+  /* ================= DOM ================= */
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var setupCard = $("setup-card"), heroCard = $("hero-card"), chartCard = $("chart-card"),
+      addCard = $("add-card"), histCard = $("hist-card");
+
+  var chartRange = "auto";
+
+  function show(el, on) { el.classList.toggle("hidden", !on); }
+
+  /* ---------- setup ---------- */
+
+  $("setup-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var name = $("s-name").value.trim();
+    var birth = $("s-birth").value;
+    var bwRaw = $("s-bw").value;
+    var err = $("setup-err");
+
+    if (!birth) { err.textContent = "Indique la date de naissance."; return; }
+    var days = daysBetween(birth, toISO(new Date()));
+    if (days < 0) { err.textContent = "La date de naissance est dans le futur."; return; }
+
+    var bw = null;
+    if (bwRaw !== "") {
+      bw = parseFloat(String(bwRaw).replace(",", "."));
+      if (!isFinite(bw) || bw < 0.3 || bw > 8) {
+        err.textContent = "Poids de naissance attendu entre 0,3 et 8 kg.";
+        return;
+      }
+    }
+    err.textContent = "";
+    state.profile = {
+      name: name || "Bébé",
+      sex: $("s-sex").value === "m" ? "m" : "f",
+      birthDate: birth,
+      birthWeight: bw
+    };
+    save();
+    render();
+  });
+
+  $("setup-cancel").addEventListener("click", function () { render(); });
+
+  $("btn-edit").addEventListener("click", function () {
+    var p = state.profile;
+    $("s-name").value = p.name === "Bébé" ? "" : p.name;
+    $("s-sex").value = p.sex;
+    $("s-birth").value = p.birthDate;
+    $("s-bw").value = p.birthWeight == null ? "" : p.birthWeight;
+    $("setup-submit").textContent = "Enregistrer";
+    $("setup-cancel").hidden = false;
+    show(setupCard, true);
+    setupCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  /* ---------- add a measurement ---------- */
+
+  $("add-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var err = $("add-err");
+    var date = $("a-date").value;
+    var raw = String($("a-weight").value).replace(",", ".");
+    var val = parseFloat(raw);
+
+    if (!date) { err.textContent = "Choisis une date."; return; }
+    if (!isFinite(val) || val <= 0) { err.textContent = "Entre un poids valide."; return; }
+
+    /* Unit: explicit choice, with a rescue for "4320" typed under kg. */
+    var kg = $("a-unit").value === "g" ? val / 1000 : (val > 30 ? val / 1000 : val);
+    if (kg < 0.3 || kg > 30) { err.textContent = "Poids attendu entre 0,3 et 30 kg."; return; }
+
+    var days = daysBetween(state.profile.birthDate, date);
+    if (days < 0) { err.textContent = "Cette date précède la naissance."; return; }
+
+    err.textContent = "";
+    state.entries.push({ id: String(days) + "-" + Math.round(kg * 1000) + "-" + state.entries.length, date: date, kg: kg });
+    save();
+    $("a-weight").value = "";
+    render();
+  });
+
+  /* ---------- history actions ---------- */
+
+  $("hist-body").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-del]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-del");
+    state.entries = state.entries.filter(function (e) { return e.id !== id; });
+    save();
+    render();
+  });
+
+  /* ---------- data tools ---------- */
+
+  function toolMsg(t) { $("tool-msg").textContent = t; }
+
+  $("btn-copy").addEventListener("click", function () {
+    var box = $("data-box");
+    box.value = JSON.stringify(state, null, 2);
+    box.select();
+    try {
+      navigator.clipboard.writeText(box.value);
+      toolMsg("Données copiées. Colle-les dans une note pour les garder en sauvegarde.");
+    } catch (e) {
+      toolMsg("Sélectionne le texte ci-dessus et copie-le à la main.");
+    }
+  });
+
+  $("btn-import").addEventListener("click", function () {
+    var box = $("data-box");
+    if (!box.value.trim()) { toolMsg("Colle d’abord des données dans le cadre."); return; }
+    try {
+      var parsed = JSON.parse(box.value);
+      if (!parsed || !parsed.profile || !parsed.profile.birthDate) throw new Error("format");
+      state = { profile: parsed.profile, entries: Array.isArray(parsed.entries) ? parsed.entries : [] };
+      save();
+      toolMsg("Données importées.");
+      render();
+    } catch (e) {
+      toolMsg("Ces données ne sont pas lisibles. Attendu : le texte produit par « Copier les données ».");
+    }
+  });
+
+  $("btn-reset").addEventListener("click", function () {
+    if (!window.confirm("Effacer le profil et toutes les pesées ? C’est définitif.")) return;
+    state = { profile: null, entries: [] };
+    try { window.localStorage.removeItem(KEY); } catch (e) {}
+    $("setup-form").reset();
+    $("setup-submit").textContent = "Commencer";
+    $("setup-cancel").hidden = true;
+    render();
+  });
+
+  /* ---------- range selector ---------- */
+
+  $("range-seg").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-range]");
+    if (!btn) return;
+    chartRange = btn.getAttribute("data-range");
+    Array.prototype.forEach.call(this.querySelectorAll("button"), function (b) {
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    drawChart();
+  });
+
+  /* ================= rendering ================= */
+
+  function render() {
+    var hasProfile = !!(state.profile && state.profile.birthDate);
+
+    show(setupCard, !hasProfile);
+    show(heroCard, hasProfile);
+    show(chartCard, hasProfile);
+    show(addCard, hasProfile);
+    show(histCard, hasProfile);
+
+    if (!hasProfile) {
+      if (!$("s-birth").value) $("s-birth").value = toISO(new Date());
+      return;
+    }
+
+    $("setup-submit").textContent = "Commencer";
+    $("setup-cancel").hidden = true;
+
+    var pts = series();
+    renderHero(pts);
+    renderHistory(pts);
+    drawChart();
+
+    var today = toISO(new Date());
+    if (!$("a-date").value || $("a-date").value < state.profile.birthDate) $("a-date").value = today;
+    $("a-date").min = state.profile.birthDate;
+    $("a-date").max = today;
+  }
+
+  function renderHero(pts) {
+    var p = state.profile;
+    var todayDays = daysBetween(p.birthDate, toISO(new Date()));
+
+    $("h-name").textContent = p.name;
+    $("h-age").textContent = ageLabel(todayDays) + " · " + (p.sex === "m" ? "garçon" : "fille");
+
+    var last = pts.length ? pts[pts.length - 1] : null;
+    var first = pts.length ? pts[0] : null;
+
+    if (!last) {
+      $("h-kg").textContent = "—";
+      $("h-sub").textContent = "Ajoute une première pesée ci-dessous.";
+      $("h-chips").innerHTML = "";
+      ["st-birth", "st-last", "st-rate", "st-pct"].forEach(function (id) {
+        $(id).textContent = "—"; $(id).className = "v"; $(id + "-n").textContent = "";
+      });
+      show($("h-note"), false);
+      return;
+    }
+
+    $("h-kg").textContent = nf(last.kg, 2);
+    $("h-sub").textContent = grams(last.kg) + " · pesée du " + shortDate(last.date) +
+      (last.days === todayDays ? " (aujourd’hui)" : " · il y a " + (todayDays - last.days) + " j");
+
+    /* chips */
+    var chips = [];
+    var pct = percentile(p.sex, last.months, last.kg);
+    if (pct != null) {
+      chips.push('<span class="chip accent"><i class="dot"></i>P' + (pct < 1 ? "<1" : pct > 99 ? ">99" : Math.round(pct)) + " sur la courbe OMS</span>");
+    }
+    chips.push('<span class="chip">' + pts.length + " pesée" + (pts.length > 1 ? "s" : "") + "</span>");
+    if (memoryOnly) chips.push('<span class="chip">stockage indisponible</span>');
+    $("h-chips").innerHTML = chips.join("");
+
+    /* stat — since birth */
+    if (p.birthWeight) {
+      var dBirth = (last.kg - p.birthWeight) * 1000;
+      $("st-birth").textContent = signed(dBirth) + " g";
+      $("st-birth").className = "v " + (dBirth >= 0 ? "pos" : "neg");
+      $("st-birth-n").textContent = "naissance " + nf(p.birthWeight, 2) + " kg";
+    } else {
+      $("st-birth").textContent = "—";
+      $("st-birth").className = "v";
+      $("st-birth-n").textContent = "poids de naissance non saisi";
+    }
+
+    /* stat — since previous measurement */
+    var prev = pts.length > 1 ? pts[pts.length - 2] : null;
+    if (prev) {
+      var dg = (last.kg - prev.kg) * 1000;
+      var dd = last.days - prev.days;
+      $("st-last").textContent = signed(dg) + " g";
+      $("st-last").className = "v " + (dg >= 0 ? "pos" : "neg");
+      $("st-last-n").textContent = "en " + dd + " jour" + (dd > 1 ? "s" : "") + " · " + shortDate(prev.date);
+    } else {
+      $("st-last").textContent = "—";
+      $("st-last").className = "v";
+      $("st-last-n").textContent = "il faut deux pesées";
+    }
+
+    /* stat — rate (g/day over the last interval) */
+    if (prev && last.days > prev.days) {
+      var rate = (last.kg - prev.kg) * 1000 / (last.days - prev.days);
+      var ref = gainRef(last.months);
+      $("st-rate").textContent = signed(rate) + " g/j";
+      $("st-rate").className = "v " + (rate >= 0 ? "pos" : "neg");
+      $("st-rate-n").textContent = ref ? "repère " + ref.lo + "–" + ref.hi + " g/j" : "";
+    } else {
+      $("st-rate").textContent = "—";
+      $("st-rate").className = "v";
+      $("st-rate-n").textContent = "il faut deux pesées";
+    }
+
+    /* stat — percentile */
+    if (pct != null) {
+      $("st-pct").textContent = "P" + (pct < 1 ? "<1" : pct > 99 ? ">99" : Math.round(pct));
+      $("st-pct").className = "v";
+      $("st-pct-n").textContent = "médiane " + nf(refAt(p.sex, "p50", last.months), 2) + " kg à cet âge";
+    } else {
+      $("st-pct").textContent = "—";
+      $("st-pct").className = "v";
+      $("st-pct-n").textContent = "au-delà de 24 mois";
+    }
+
+    /* contextual note */
+    var note = "";
+    if (p.birthWeight && last.days <= 21 && last.kg < p.birthWeight) {
+      var pctLost = (p.birthWeight - last.kg) / p.birthWeight * 100;
+      note = "Le poids de naissance n’est pas encore repris (−" + nf(pctLost, 1) +
+        " %). Une perte des premiers jours est habituelle, avec un retour au poids de naissance vers 10–14 jours.";
+    } else if (pct != null && pct < 3) {
+      note = "Cette pesée est sous la courbe P3. À signaler au pédiatre ou à la sage-femme.";
+    } else if (pct != null && pct > 97) {
+      note = "Cette pesée est au-dessus de la courbe P97. À signaler au pédiatre ou à la sage-femme.";
+    } else if (prev && last.days - prev.days > 45) {
+      note = "Dernier écart entre deux pesées : " + (last.days - prev.days) +
+        " jours. La courbe se lit mieux avec des pesées régulières.";
+    }
+    $("h-note").textContent = note;
+    show($("h-note"), !!note);
+  }
+
+  function renderHistory(pts) {
+    var body = $("hist-body");
+    body.innerHTML = "";
+    show($("hist-empty"), pts.length === 0);
+
+    for (var i = pts.length - 1; i >= 0; i--) {
+      var e = pts[i];
+      var prev = i > 0 ? pts[i - 1] : null;
+      var tr = document.createElement("tr");
+
+      var dg = prev ? (e.kg - prev.kg) * 1000 : null;
+      var dd = prev ? e.days - prev.days : 0;
+      var rate = prev && dd > 0 ? dg / dd : null;
+
+      tr.innerHTML =
+        "<td>" + shortDate(e.date) + (e.birth ? ' <span class="dim">naissance</span>' : "") + "</td>" +
+        '<td class="dim">' + ageShort(e.days) + "</td>" +
+        "<td>" + fmtKg(e.kg) + " kg</td>" +
+        '<td class="dim">' + (dg == null ? "—" : signed(dg) + " g") + "</td>" +
+        '<td class="dim">' + (rate == null ? "—" : signed(rate)) + "</td>" +
+        "<td>" + (e.birth
+          ? ""
+          : '<button class="del" type="button" data-del="' + e.id + '" aria-label="Supprimer la pesée du ' + shortDate(e.date) + '">×</button>') +
+        "</td>";
+      body.appendChild(tr);
+    }
+  }
+
+  /* ================= chart ================= */
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function el(name, attrs) {
+    var n = document.createElementNS(SVGNS, name);
+    for (var k in attrs) if (attrs.hasOwnProperty(k)) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  var hitPoints = [];
+
+  function drawChart() {
+    var plot = $("plot");
+    var tip = $("tip");
+    var old = plot.querySelector("svg");
+    if (old) plot.removeChild(old);
+
+    var p = state.profile;
+    var pts = series();
+
+    var W = Math.max(280, plot.clientWidth || 320);
+    var H = W < 420 ? 260 : 320;
+    var M = { t: 14, r: 42, b: 30, l: 36 };
+    var iw = W - M.l - M.r;
+    var ih = H - M.t - M.b;
+
+    /* x domain, in months */
+    var maxAgeData = pts.length ? pts[pts.length - 1].months : 0;
+    var todayMonths = daysBetween(p.birthDate, toISO(new Date())) / DAYS_PER_MONTH;
+    var xMax;
+    if (chartRange === "auto") {
+      xMax = Math.max(1, Math.min(MAX_MONTHS, Math.ceil(Math.max(maxAgeData, todayMonths) * 1.2)));
+      if (xMax < 3) xMax = 3;
+    } else {
+      xMax = +chartRange;
+    }
+
+    /* y domain from the reference band over the visible x range, widened by data */
+    var yMin = refAt(p.sex, "p3", 0), yMax = refAt(p.sex, "p97", xMax);
+    pts.forEach(function (e) {
+      if (e.months <= xMax + 0.01) {
+        if (e.kg < yMin) yMin = e.kg;
+        if (e.kg > yMax) yMax = e.kg;
+      }
+    });
+    var pad = (yMax - yMin) * 0.08;
+    yMin = Math.max(0, yMin - pad);
+    yMax = yMax + pad;
+
+    function X(m) { return M.l + (clamp(m, 0, xMax) / xMax) * iw; }
+    function Y(kg) { return M.t + ih - ((kg - yMin) / (yMax - yMin)) * ih; }
+
+    var svg = el("svg", {
+      viewBox: "0 0 " + W + " " + H,
+      width: W, height: H,
+      role: "img",
+      "aria-label": "Courbe de poids de " + p.name + " comparée aux standards OMS"
+    });
+
+    /* --- y gridlines + ticks --- */
+    var span = yMax - yMin;
+    var step = span / 5;
+    var nice = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5];
+    for (var s = 0; s < nice.length; s++) { if (nice[s] >= step) { step = nice[s]; break; } }
+    for (var v = Math.ceil(yMin / step) * step; v <= yMax + 1e-9; v += step) {
+      var y = Y(v);
+      svg.appendChild(el("line", { class: "grid-line", x1: M.l, x2: M.l + iw, y1: y, y2: y }));
+      var t = el("text", { class: "tick-text", x: M.l - 7, y: y + 3.5, "text-anchor": "end" });
+      t.textContent = nf(v, step < 1 ? 1 : 0);
+      svg.appendChild(t);
+    }
+
+    /* --- reference bands --- */
+    function bandPath(lowKey, highKey) {
+      var up = [], down = [], i, m;
+      var stepM = xMax / 60;
+      for (i = 0; i <= 60; i++) {
+        m = i * stepM;
+        up.push(X(m) + "," + Y(refAt(p.sex, highKey, m)));
+      }
+      for (i = 60; i >= 0; i--) {
+        m = i * stepM;
+        down.push(X(m) + "," + Y(refAt(p.sex, lowKey, m)));
+      }
+      return "M" + up.join("L") + "L" + down.join("L") + "Z";
+    }
+    svg.appendChild(el("path", { class: "band-out", d: bandPath("p3", "p97") }));
+    svg.appendChild(el("path", { class: "band-in", d: bandPath("p15", "p85") }));
+
+    /* --- median line --- */
+    var med = [];
+    for (var i2 = 0; i2 <= 60; i2++) {
+      var mm = i2 * (xMax / 60);
+      med.push(X(mm) + "," + Y(refAt(p.sex, "p50", mm)));
+    }
+    svg.appendChild(el("path", { class: "ref-med", d: "M" + med.join("L") }));
+
+    var medLabelY = Y(refAt(p.sex, "p50", xMax));
+    var lblMed = el("text", { class: "ref-label", x: M.l + iw + 5, y: clamp(medLabelY + 3.5, M.t + 8, M.t + ih) });
+    lblMed.textContent = "P50";
+    svg.appendChild(lblMed);
+
+    var lblHigh = el("text", { class: "ref-label", x: M.l + iw + 5, y: clamp(Y(refAt(p.sex, "p97", xMax)) + 3.5, M.t + 8, M.t + ih) });
+    lblHigh.textContent = "P97";
+    svg.appendChild(lblHigh);
+    var lblLow = el("text", { class: "ref-label", x: M.l + iw + 5, y: clamp(Y(refAt(p.sex, "p3", xMax)) + 3.5, M.t + 8, M.t + ih) });
+    lblLow.textContent = "P3";
+    svg.appendChild(lblLow);
+
+    /* --- x axis --- */
+    svg.appendChild(el("line", { class: "axis-line", x1: M.l, x2: M.l + iw, y1: M.t + ih, y2: M.t + ih }));
+    var xStep = xMax <= 6 ? 1 : xMax <= 12 ? 2 : 3;
+    for (var xm = 0; xm <= xMax + 1e-9; xm += xStep) {
+      var tx = el("text", { class: "tick-text", x: X(xm), y: M.t + ih + 15, "text-anchor": "middle" });
+      tx.textContent = String(Math.round(xm));
+      svg.appendChild(tx);
+    }
+    var xUnit = el("text", { class: "tick-text", x: M.l + iw, y: M.t + ih + 27, "text-anchor": "end" });
+    xUnit.textContent = "âge en mois";
+    svg.appendChild(xUnit);
+
+    var yUnit = el("text", { class: "tick-text", x: M.l - 7, y: M.t - 3, "text-anchor": "end" });
+    yUnit.textContent = "kg";
+    svg.appendChild(yUnit);
+
+    /* --- baby's own line --- */
+    var vis = pts.filter(function (e) { return e.months <= xMax + 0.01; });
+    hitPoints = [];
+
+    if (vis.length) {
+      if (vis.length > 1) {
+        svg.appendChild(el("path", {
+          class: "baby-line",
+          d: "M" + vis.map(function (e) { return X(e.months) + "," + Y(e.kg); }).join("L")
+        }));
+      }
+      vis.forEach(function (e) {
+        var cx = X(e.months), cy = Y(e.kg);
+        svg.appendChild(el("circle", { class: "baby-dot", cx: cx, cy: cy, r: 4 }));
+        hitPoints.push({ x: cx, y: cy, e: e });
+      });
+
+      /* one direct label: the latest point */
+      var lastP = vis[vis.length - 1];
+      var lx = X(lastP.months), ly = Y(lastP.kg);
+      var nearRight = lx > M.l + iw - 46;
+      var lbl = el("text", {
+        class: "end-label",
+        x: nearRight ? lx - 8 : lx + 8,
+        y: clamp(ly - 9, M.t + 10, M.t + ih - 4),
+        "text-anchor": nearRight ? "end" : "start"
+      });
+      lbl.textContent = nf(lastP.kg, 2) + " kg";
+      svg.appendChild(lbl);
+    }
+
+    /* --- hover layer --- */
+    var cross = el("line", { class: "cross", x1: 0, x2: 0, y1: M.t, y2: M.t + ih, opacity: 0 });
+    svg.appendChild(cross);
+    var halo = el("circle", { class: "baby-dot", cx: 0, cy: 0, r: 6, opacity: 0 });
+    svg.appendChild(halo);
+
+    var overlay = el("rect", { x: M.l, y: M.t, width: iw, height: ih, fill: "transparent" });
+    svg.appendChild(overlay);
+
+    function hideTip() { tip.classList.remove("on"); cross.setAttribute("opacity", 0); halo.setAttribute("opacity", 0); }
+
+    overlay.addEventListener("pointermove", function (ev) {
+      if (!hitPoints.length) return;
+      var rect = svg.getBoundingClientRect();
+      var scale = W / rect.width;
+      var px = (ev.clientX - rect.left) * scale;
+
+      var best = hitPoints[0], bd = Infinity;
+      hitPoints.forEach(function (h) {
+        var d = Math.abs(h.x - px);
+        if (d < bd) { bd = d; best = h; }
+      });
+
+      cross.setAttribute("x1", best.x); cross.setAttribute("x2", best.x); cross.setAttribute("opacity", 1);
+      halo.setAttribute("cx", best.x); halo.setAttribute("cy", best.y); halo.setAttribute("opacity", 1);
+
+      var pc = percentile(p.sex, best.e.months, best.e.kg);
+      tip.innerHTML = "<strong>" + fmtKg(best.e.kg) + " kg</strong>" +
+        '<br><span class="t-d">' + shortDate(best.e.date) + " · " + ageShort(best.e.days) +
+        (pc != null ? " · P" + Math.round(pc) : "") + "</span>";
+      tip.classList.add("on");
+
+      var tw = tip.offsetWidth, th = tip.offsetHeight;
+      var left = best.x / scale - tw / 2;
+      tip.style.left = clamp(left, 2, rect.width - tw - 2) + "px";
+      tip.style.top = Math.max(2, best.y / scale - th - 12) + "px";
+    });
+    overlay.addEventListener("pointerleave", hideTip);
+    overlay.addEventListener("pointercancel", hideTip);
+
+    plot.insertBefore(svg, tip);
+  }
+
+  /* redraw on resize (width-driven layout) */
+  var rAF = null;
+  window.addEventListener("resize", function () {
+    if (rAF) window.cancelAnimationFrame(rAF);
+    rAF = window.requestAnimationFrame(function () {
+      if (state.profile) drawChart();
+    });
+  });
+
+  /* ================= boot ================= */
+  load();
+  render();
+})();
+</script>

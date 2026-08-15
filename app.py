@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, send_from_directory
+import os
 import requests
 import random
 from datetime import datetime
@@ -47,6 +48,12 @@ def home():
     <p><strong>Niveau :</strong> {level}</p>
     <p>Dernière mise à jour : {datetime.now().strftime('%H:%M:%S')}</p>
     """
+
+@app.route("/poids-bebe")
+def poids_bebe():
+    # Page autonome : tout le suivi (données, courbes OMS, calculs) tient dans le
+    # fichier HTML et s'exécute côté navigateur. Rien n'est stocké sur le serveur.
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "poids-bebe.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
