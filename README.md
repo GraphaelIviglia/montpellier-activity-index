@@ -29,9 +29,18 @@ dit au lieu de perdre les pesées en silence.
 L'app est une PWA : manifeste, icônes et service worker (`docs/sw.js`) qui met en
 cache la coquille, ce qui la rend utilisable sans réseau une fois installée.
 
-Pour publier l'URL d'installation : **Settings → Pages → Deploy from a branch**,
-branche `main`, dossier `/docs`. L'app est alors servie à
-`https://<compte>.github.io/montpellier-activity-index/`.
+Deux façons de publier l'URL d'installation :
+
+- **Automatique** — le workflow [`pages.yml`](.github/workflows/pages.yml) publie
+  `docs/` à chaque poussée sur `main` et active Pages lui-même au premier passage
+  (`configure-pages` avec `enablement: true`).
+- **Manuelle** — **Settings → Pages → Deploy from a branch**, en choisissant la
+  branche voulue et le dossier `/docs`. Utile pour publier une branche de travail
+  sans passer par `main`.
+
+Dans les deux cas l'app est servie à
+`https://<compte>.github.io/montpellier-activity-index/` — le chemin du dépôt
+compte, la racine du domaine ne renvoie rien.
 
 Le service worker exige HTTPS (ou `localhost`) : sur `file://` la page fonctionne
 mais sans mode hors-ligne.
