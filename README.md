@@ -7,13 +7,22 @@ Petit service Flask, déployé sur Render (`gunicorn app:app`).
 | Route | Contenu |
 |---|---|
 | `/` | Indice d'activité du centre-ville de Montpellier |
-| `/poids-bebe/` | Carnet de poids — suivi du poids d'un bébé |
+| `/poids-bebe/` | Carnet de bébé — couches et suivi du poids |
 
-## Carnet de poids
+## Carnet de bébé
 
 Application autonome, dans [`docs/`](docs/) : aucune dépendance, aucun serveur,
 aucune base de données. Les mêmes fichiers sont servis par Flask sur
 `/poids-bebe/` et publiables tels quels par GitHub Pages.
+
+**Couches**
+
+- un bouton par contenu — pipi, caca, les deux — qui note le change à l'heure courante en un seul geste ;
+- temps écoulé depuis le dernier change, tenu à jour tant que la page reste ouverte ;
+- compte du jour détaillé par contenu, moyenne sur sept jours, et les dix derniers changes ;
+- rattrapage d'un change oublié à une autre heure, les heures futures étant refusées.
+
+**Poids**
 
 - saisie des pesées en kg ou en g, à partir du profil du bébé (prénom, sexe, date et poids de naissance) ;
 - courbe de poids comparée aux standards de croissance de l'OMS (poids-pour-âge, 0–24 mois) avec les zones P3–P97 et P15–P85 ;

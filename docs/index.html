@@ -1,13 +1,13 @@
-<title>Carnet de poids</title>
+<title>Carnet de bébé</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="description" content="Suivi du poids d'un bebe : pesees, courbe OMS et rythme de prise en g/jour." />
+<meta name="description" content="Suivi d'un bebe : couches, pesees, courbe OMS et rythme de prise en g/jour." />
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#141c1a" media="(prefers-color-scheme: dark)" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Poids" />
+<meta name="apple-mobile-web-app-title" content="Bébé" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon-192.png" />
 <style>
@@ -27,6 +27,8 @@
     --band-out:  rgba(12, 106, 94, .07);
     --band-in:   rgba(12, 106, 94, .13);
     --ref-line:  #a9b6b1;
+    --pipi:      #d59a12;
+    --caca:      #96603a;
     --good:      #1b6b3a;
     --warn:      #8a5a06;
     --shadow:    0 1px 2px rgba(15, 28, 24, .06), 0 8px 24px -12px rgba(15, 28, 24, .18);
@@ -51,6 +53,8 @@
       --band-out:  rgba(63, 184, 164, .09);
       --band-in:   rgba(63, 184, 164, .16);
       --ref-line:  #55645f;
+      --pipi:      #e0ab2c;
+      --caca:      #b8825a;
       --good:      #5cc47f;
       --warn:      #d0a049;
       --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
@@ -72,6 +76,8 @@
     --band-out:  rgba(63, 184, 164, .09);
     --band-in:   rgba(63, 184, 164, .16);
     --ref-line:  #55645f;
+    --pipi:      #e0ab2c;
+    --caca:      #b8825a;
     --good:      #5cc47f;
     --warn:      #d0a049;
     --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
@@ -200,6 +206,44 @@
     font-size: 13.5px;
     color: var(--ink-2);
   }
+
+  /* ---------- couches ---------- */
+  .dc-last { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .dc-since { font-size: 26px; font-weight: 640; letter-spacing: -.02em; }
+  .dc-when { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+
+  .types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tbtn {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-family: var(--sans); font-size: 15px; font-weight: 600;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 13px 6px;
+    cursor: pointer;
+    min-height: 62px;
+  }
+  .tbtn:hover { border-color: var(--accent); background: var(--surface); }
+  .tbtn:active { transform: scale(.98); }
+  .tbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tbtn .marks { display: flex; gap: 3px; }
+
+  .mark { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+  .mark.pipi { background: var(--pipi); }
+  .mark.caca { background: var(--caca); }
+
+  .changes { list-style: none; margin: 14px 0 0; padding: 0; }
+  .changes li {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-family: var(--mono); font-size: 13px;
+  }
+  .changes li:last-child { border-bottom: 0; }
+  .changes .marks { display: flex; gap: 3px; flex: none; width: 26px; }
+  .changes .c-label { color: var(--ink); flex: 1 1 auto; }
+  .changes .c-time { color: var(--muted); }
 
   /* ---------- chart ---------- */
   .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
@@ -398,7 +442,8 @@
     * { transition: none !important; animation: none !important; }
   }
   @media (min-width: 560px) {
-    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    /* only the summary has four tiles; the diaper card keeps its two */
+    .hero .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .figure .val { font-size: 68px; }
   }
 </style>
@@ -406,8 +451,7 @@
 <div class="wrap">
 
   <div class="masthead">
-    <h1>Carnet de poids</h1>
-    <span class="who">Courbes OMS 0–24&nbsp;mois</span>
+    <h1>Carnet de bébé</h1>
   </div>
 
   <!-- ============ SETUP (première visite) ============ -->
@@ -482,6 +526,68 @@
     </div>
 
     <div class="note hidden" id="h-note"></div>
+  </section>
+
+  <!-- ============ COUCHES ============ -->
+  <section class="card hidden" id="diaper-card">
+    <h2>Couches</h2>
+
+    <div class="dc-last">
+      <span class="dc-since" id="dc-since">—</span>
+      <span class="dc-when" id="dc-when"></span>
+    </div>
+
+    <div class="types" id="dc-types" role="group" aria-label="Noter un change">
+      <button class="tbtn" type="button" data-type="pipi">
+        <span class="marks"><i class="mark pipi"></i></span>Pipi
+      </button>
+      <button class="tbtn" type="button" data-type="caca">
+        <span class="marks"><i class="mark caca"></i></span>Caca
+      </button>
+      <button class="tbtn" type="button" data-type="both">
+        <span class="marks"><i class="mark pipi"></i><i class="mark caca"></i></span>Les deux
+      </button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="k">Aujourd’hui</div>
+        <div class="v" id="dc-today">—</div>
+        <div class="n" id="dc-today-n"></div>
+      </div>
+      <div class="stat">
+        <div class="k">Moyenne 7 jours</div>
+        <div class="v" id="dc-avg">—</div>
+        <div class="n">repère : 5 à 6 couches mouillées par jour</div>
+      </div>
+    </div>
+
+    <ul class="changes" id="dc-list"></ul>
+    <p class="empty hidden" id="dc-empty">Aucun change noté pour l’instant.</p>
+
+    <details class="tools">
+      <summary>Noter à une autre heure</summary>
+      <form id="dc-form">
+        <div class="row" style="margin-top: 12px;">
+          <div class="field">
+            <label for="dc-at">Date et heure</label>
+            <input id="dc-at" type="datetime-local" required />
+          </div>
+          <div class="field">
+            <label for="dc-type">Contenu</label>
+            <select id="dc-type">
+              <option value="pipi">Pipi</option>
+              <option value="caca">Caca</option>
+              <option value="both">Les deux</option>
+            </select>
+          </div>
+        </div>
+        <p class="err" id="dc-err" role="alert"></p>
+        <div class="row">
+          <button class="btn small" type="submit">Noter ce change</button>
+        </div>
+      </form>
+    </details>
   </section>
 
   <!-- ============ ADD ============ -->
@@ -692,6 +798,22 @@
   function daysBetween(a, b) {
     return Math.round((parseDate(b) - parseDate(a)) / 86400000);
   }
+  function pad2(v) { return (v < 10 ? "0" : "") + v; }
+
+  /* Changes are stamped "YYYY-MM-DDTHH:MM" in local time, like the dates above:
+     no timezone, so a stored moment always reads back as the wall clock it was. */
+  function nowLocal() {
+    var d = new Date();
+    return toISO(d) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function parseLocal(s) {
+    var half = String(s).split("T");
+    var d = parseDate(half[0]);
+    var t = (half[1] || "00:00").split(":");
+    d.setHours(+t[0] || 0, +t[1] || 0, 0, 0);
+    return d;
+  }
+
   var fmtDate = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
   function shortDate(iso) { return fmtDate.format(parseDate(iso)); }
 
@@ -703,6 +825,29 @@
     return kg.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
   }
   function signed(g) { return (g > 0 ? "+" : g < 0 ? "−" : "") + nf(Math.abs(Math.round(g)), 0); }
+
+  /* "il y a 2 h 10" — the phrasing a parent actually wants at 3am. */
+  function sinceLabel(minutes) {
+    if (minutes < 1) return "à l’instant";
+    if (minutes < 60) return "il y a " + minutes + " min";
+    var h = Math.floor(minutes / 60), m = minutes % 60;
+    if (h < 24) return "il y a " + h + " h" + (m ? " " + pad2(m) : "");
+    var d = Math.floor(h / 24);
+    return "il y a " + d + (d > 1 ? " jours" : " jour");
+  }
+
+  var TYPES = {
+    pipi: { label: "Pipi",     marks: ["pipi"] },
+    caca: { label: "Caca",     marks: ["caca"] },
+    both: { label: "Les deux", marks: ["pipi", "caca"] }
+  };
+
+  function marksHtml(type) {
+    var t = TYPES[type] || TYPES.pipi;
+    return '<span class="marks">' + t.marks.map(function (m) {
+      return '<i class="mark ' + m + '"></i>';
+    }).join("") + "</span>";
+  }
 
   /* "3 mois 12 jours" / "18 jours" */
   function ageLabel(days) {
@@ -722,7 +867,7 @@
 
   var KEY = "carnet-de-poids/v1";
   var memoryOnly = false;
-  var state = { profile: null, entries: [] };
+  var state = { profile: null, entries: [], changes: [] };
 
   function storageWorks() {
     try {
@@ -740,6 +885,8 @@
       if (raw) {
         var parsed = JSON.parse(raw);
         if (parsed && parsed.profile) state = parsed;
+        if (!Array.isArray(state.entries)) state.entries = [];
+        if (!Array.isArray(state.changes)) state.changes = [];
       }
     } catch (e) {
       memoryOnly = true;
@@ -902,7 +1049,11 @@
     try {
       var parsed = JSON.parse(box.value);
       if (!parsed || !parsed.profile || !parsed.profile.birthDate) throw new Error("format");
-      state = { profile: parsed.profile, entries: Array.isArray(parsed.entries) ? parsed.entries : [] };
+      state = {
+        profile: parsed.profile,
+        entries: Array.isArray(parsed.entries) ? parsed.entries : [],
+        changes: Array.isArray(parsed.changes) ? parsed.changes : []
+      };
       save();
       toolMsg("Données importées.");
       render();
@@ -913,13 +1064,110 @@
 
   $("btn-reset").addEventListener("click", function () {
     if (!window.confirm("Effacer le profil et toutes les pesées ? C’est définitif.")) return;
-    state = { profile: null, entries: [] };
+    state = { profile: null, entries: [], changes: [] };
     try { window.localStorage.removeItem(KEY); } catch (e) {}
     $("setup-form").reset();
     $("setup-submit").textContent = "Commencer";
     $("setup-cancel").hidden = true;
     render();
   });
+
+  /* ---------- couches ---------- */
+
+  var fmtTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+  function sortedChanges() {
+    return state.changes.slice().sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+  }
+
+  function addChange(type, at) {
+    if (!TYPES[type]) return;
+    state.changes.push({ id: "c" + at + "-" + state.changes.length, at: at, type: type });
+    save();
+    renderChanges();
+    var d = parseLocal(at);
+    toast("Change noté : " + TYPES[type].label.toLowerCase() + " à " + fmtTime.format(d) + ".");
+  }
+
+  $("dc-types").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-type]");
+    if (!btn) return;
+    addChange(btn.getAttribute("data-type"), nowLocal());
+  });
+
+  $("dc-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var at = $("dc-at").value;
+    var err = $("dc-err");
+    if (!at) { err.textContent = "Choisis une date et une heure."; return; }
+    if (parseLocal(at) - new Date() > 60000) { err.textContent = "Cette heure est dans le futur."; return; }
+    err.textContent = "";
+    addChange($("dc-type").value, at.slice(0, 16));
+  });
+
+  $("dc-list").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-delc]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-delc");
+    state.changes = state.changes.filter(function (c) { return c.id !== id; });
+    save();
+    renderChanges();
+  });
+
+  function renderChanges() {
+    var all = sortedChanges();
+    var now = new Date();
+    var todayISO = toISO(now);
+
+    /* last change */
+    if (all.length) {
+      var d = parseLocal(all[0].at);
+      /* floor, not round: stamps are minute-precision, so a change noted 40 s ago
+         must read "à l’instant" rather than being rounded up to a minute. */
+      var mins = Math.max(0, Math.floor((now - d) / 60000));
+      $("dc-since").textContent = sinceLabel(mins);
+      $("dc-when").innerHTML = marksHtml(all[0].type) + " " + TYPES[all[0].type].label.toLowerCase() +
+        " · " + (all[0].at.slice(0, 10) === todayISO ? "" : shortDate(all[0].at.slice(0, 10)) + " ") + fmtTime.format(d);
+    } else {
+      $("dc-since").textContent = "—";
+      $("dc-when").textContent = "aucun change noté";
+    }
+
+    /* today */
+    var today = all.filter(function (c) { return c.at.slice(0, 10) === todayISO; });
+    var wet = today.filter(function (c) { return c.type !== "caca"; }).length;
+    var soiled = today.filter(function (c) { return c.type !== "pipi"; }).length;
+    $("dc-today").textContent = today.length + (today.length > 1 ? " changes" : " change");
+    $("dc-today-n").textContent = today.length
+      ? wet + " avec pipi · " + soiled + " avec caca"
+      : "rien de noté aujourd’hui";
+
+    /* 7-day average, counted over the days actually covered */
+    var since = new Date(now.getTime() - 6 * 86400000);
+    var window7 = all.filter(function (c) { return parseLocal(c.at) >= since; });
+    if (window7.length) {
+      var firstDay = parseLocal(window7[window7.length - 1].at);
+      var days = Math.max(1, Math.round((now - firstDay) / 86400000) + 1);
+      $("dc-avg").textContent = nf(window7.length / days, 1) + " / jour";
+    } else {
+      $("dc-avg").textContent = "—";
+    }
+
+    /* recent list */
+    var list = $("dc-list");
+    list.innerHTML = "";
+    show($("dc-empty"), all.length === 0);
+    all.slice(0, 10).forEach(function (c) {
+      var when = parseLocal(c.at);
+      var sameDay = c.at.slice(0, 10) === todayISO;
+      var li = document.createElement("li");
+      li.innerHTML = marksHtml(c.type) +
+        '<span class="c-label">' + TYPES[c.type].label + "</span>" +
+        '<span class="c-time">' + (sameDay ? "" : shortDate(c.at.slice(0, 10)) + " · ") + fmtTime.format(when) + "</span>" +
+        '<button class="del" type="button" data-delc="' + c.id + '" aria-label="Supprimer ce change">×</button>';
+      list.appendChild(li);
+    });
+  }
 
   /* ---------- range selector ---------- */
 
@@ -940,6 +1188,7 @@
 
     show(setupCard, !hasProfile);
     show(heroCard, hasProfile);
+    show($("diaper-card"), hasProfile);
     show(chartCard, hasProfile);
     show(addCard, hasProfile);
     show(histCard, hasProfile);
@@ -954,6 +1203,8 @@
 
     var pts = series();
     renderHero(pts);
+    renderChanges();
+    $("dc-at").value = nowLocal();
     renderHistory(pts);
     drawChart();
 
@@ -1368,6 +1619,12 @@
       navigator.serviceWorker.register("sw.js").catch(function () {});
     });
   }
+
+  /* The elapsed time is the whole point of the line — keep it honest. */
+  window.setInterval(function () { if (state.profile) renderChanges(); }, 60000);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && state.profile) renderChanges();
+  });
 
   /* ================= boot ================= */
   memoryOnly = !storageWorks();
