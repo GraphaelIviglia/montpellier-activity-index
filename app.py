@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, redirect, send_from_directory
+import os
 import requests
 import random
 from datetime import datetime
@@ -47,6 +48,24 @@ def home():
     <p><strong>Niveau :</strong> {level}</p>
     <p>Dernière mise à jour : {datetime.now().strftime('%H:%M:%S')}</p>
     """
+
+DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs")
+
+# Carnet de poids : tout le suivi (données, courbes OMS, calculs) s'exécute côté
+# navigateur, rien n'est stocké sur le serveur. Les mêmes fichiers sont publiés
+# tels quels par GitHub Pages depuis docs/.
+@app.route("/poids-bebe")
+def poids_bebe_redirect():
+    # La barre finale garde les chemins relatifs (manifeste, service worker) valides.
+    return redirect("/poids-bebe/", code=302)
+
+@app.route("/poids-bebe/")
+def poids_bebe():
+    return send_from_directory(DOCS_DIR, "index.html")
+
+@app.route("/poids-bebe/<path:filename>")
+def poids_bebe_asset(filename):
+    return send_from_directory(DOCS_DIR, filename)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
