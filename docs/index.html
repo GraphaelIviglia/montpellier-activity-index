@@ -1,5 +1,15 @@
 <title>Carnet de poids</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="description" content="Suivi du poids d'un bebe : pesees, courbe OMS et rythme de prise en g/jour." />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141c1a" media="(prefers-color-scheme: dark)" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Poids" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="icon" href="icon-192.png" />
 <style>
   :root {
     color-scheme: light;
@@ -275,7 +285,37 @@
     min-width: 0;
   }
   input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
-  input[type="number"] { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  input[inputmode="decimal"] { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 12px);
+    max-width: min(92vw, 420px);
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 14px;
+    padding: 11px 15px;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px -8px rgba(0,0,0,.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 50;
+  }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- install ---------- */
+  .install p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+  .install ol { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink-2); }
+  .install li { margin-bottom: 4px; }
+  .install kbd {
+    font-family: var(--mono); font-size: 12.5px;
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 5px; padding: 1px 5px; color: var(--ink);
+  }
 
   .btn {
     font-family: var(--sans);
@@ -394,7 +434,7 @@
         </div>
         <div class="field">
           <label for="s-bw">Poids de naissance (kg)</label>
-          <input id="s-bw" type="number" step="0.01" min="0.4" max="8" inputmode="decimal" placeholder="3,25" />
+          <input id="s-bw" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="3,25" />
         </div>
       </div>
       <p class="err" id="setup-err" role="alert"></p>
@@ -444,6 +484,34 @@
     <div class="note hidden" id="h-note"></div>
   </section>
 
+  <!-- ============ ADD ============ -->
+  <section class="card hidden" id="add-card">
+    <h2>Nouvelle pesée</h2>
+    <form id="add-form">
+      <div class="row">
+        <div class="field">
+          <label for="a-date">Date</label>
+          <input id="a-date" type="date" required />
+        </div>
+        <div class="field">
+          <label for="a-weight">Poids</label>
+          <input id="a-weight" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" required placeholder="4,32" />
+        </div>
+        <div class="field" style="flex: 0 0 auto;">
+          <label for="a-unit">Unité</label>
+          <select id="a-unit" style="width: auto;">
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+          </select>
+        </div>
+      </div>
+      <p class="err" id="add-err" role="alert"></p>
+      <div class="row">
+        <button class="btn" type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </section>
+
   <!-- ============ CHART ============ -->
   <section class="card hidden" id="chart-card">
     <div class="chart-head">
@@ -463,34 +531,6 @@
       <span><i class="sw med"></i> Médiane OMS</span>
       <span><i class="sw band"></i> Zone P3–P97</span>
     </div>
-  </section>
-
-  <!-- ============ ADD ============ -->
-  <section class="card hidden" id="add-card">
-    <h2>Nouvelle pesée</h2>
-    <form id="add-form">
-      <div class="row">
-        <div class="field">
-          <label for="a-date">Date</label>
-          <input id="a-date" type="date" required />
-        </div>
-        <div class="field">
-          <label for="a-weight">Poids</label>
-          <input id="a-weight" type="number" step="0.001" min="0.2" inputmode="decimal" required placeholder="4,32" />
-        </div>
-        <div class="field" style="flex: 0 0 auto;">
-          <label for="a-unit">Unité</label>
-          <select id="a-unit" style="width: auto;">
-            <option value="kg">kg</option>
-            <option value="g">g</option>
-          </select>
-        </div>
-      </div>
-      <p class="err" id="add-err" role="alert"></p>
-      <div class="row">
-        <button class="btn" type="submit">Enregistrer</button>
-      </div>
-    </form>
   </section>
 
   <!-- ============ HISTORY ============ -->
@@ -526,6 +566,17 @@
     </details>
   </section>
 
+  <!-- ============ INSTALL ============ -->
+  <section class="card install hidden" id="install-card">
+    <h2>Sur l’écran d’accueil</h2>
+    <p id="install-lead">Installe le carnet comme une application : il s’ouvre en plein écran et fonctionne sans réseau.</p>
+    <ol id="install-steps"></ol>
+    <div class="row" style="margin-top: 12px;">
+      <button class="btn" type="button" id="install-btn" hidden>Installer l’application</button>
+      <button class="btn ghost small" type="button" id="install-dismiss">Masquer</button>
+    </div>
+  </section>
+
   <footer>
     <strong>Repère, pas diagnostic.</strong> Les courbes affichées sont les standards
     de croissance de l’OMS (poids-pour-âge, valeurs arrondies à 100&nbsp;g) et le percentile
@@ -535,6 +586,8 @@
   </footer>
 
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -576,6 +629,15 @@
   /* ================= helpers ================= */
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+  /* Accepts "4,32", "4.32", "4 320" — the comma a French keyboard actually types.
+     <input type="number"> silently drops the comma ("4,32" becomes "432"), which is
+     why the weight fields are plain text inputs parsed here. */
+  function parseNum(raw) {
+    var t = String(raw).trim().replace(/[\s\u00a0\u202f]/g, "").replace(",", ".");
+    if (!/^\d*\.?\d+$/.test(t)) return NaN;
+    return parseFloat(t);
+  }
 
   /* Interpolate a WHO curve at an arbitrary age in months. */
   function refAt(sex, key, months) {
@@ -662,6 +724,16 @@
   var memoryOnly = false;
   var state = { profile: null, entries: [] };
 
+  function storageWorks() {
+    try {
+      window.localStorage.setItem(KEY + "/probe", "1");
+      window.localStorage.removeItem(KEY + "/probe");
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function load() {
     try {
       var raw = window.localStorage.getItem(KEY);
@@ -701,6 +773,15 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () { t.classList.remove("on"); }, 3200);
+  }
+
   var setupCard = $("setup-card"), heroCard = $("hero-card"), chartCard = $("chart-card"),
       addCard = $("add-card"), histCard = $("hist-card");
 
@@ -723,9 +804,11 @@
 
     var bw = null;
     if (bwRaw !== "") {
-      bw = parseFloat(String(bwRaw).replace(",", "."));
+      bw = parseNum(bwRaw);
+      if (!isFinite(bw)) bw = NaN;
+      if (bw >= 300 && bw <= 8000) bw = bw / 1000;   /* saisi en grammes */
       if (!isFinite(bw) || bw < 0.3 || bw > 8) {
-        err.textContent = "Poids de naissance attendu entre 0,3 et 8 kg.";
+        err.textContent = "Poids de naissance attendu entre 0,3 et 8 kg (ou 300 à 8000 g).";
         return;
       }
     }
@@ -760,14 +843,17 @@
     ev.preventDefault();
     var err = $("add-err");
     var date = $("a-date").value;
-    var raw = String($("a-weight").value).replace(",", ".");
-    var val = parseFloat(raw);
+    var val = parseNum($("a-weight").value);
 
     if (!date) { err.textContent = "Choisis une date."; return; }
-    if (!isFinite(val) || val <= 0) { err.textContent = "Entre un poids valide."; return; }
+    if (!isFinite(val) || val <= 0) {
+      err.textContent = "Entre un poids, par exemple 4,32 en kg ou 4320 en g.";
+      return;
+    }
 
-    /* Unit: explicit choice, with a rescue for "4320" typed under kg. */
-    var kg = $("a-unit").value === "g" ? val / 1000 : (val > 30 ? val / 1000 : val);
+    /* Unit comes from the selector; a value of 100 or more under "kg" can only be
+       grams, so convert it — and the toast below states what was recorded. */
+    var kg = $("a-unit").value === "g" ? val / 1000 : (val >= 100 ? val / 1000 : val);
     if (kg < 0.3 || kg > 30) { err.textContent = "Poids attendu entre 0,3 et 30 kg."; return; }
 
     var days = daysBetween(state.profile.birthDate, date);
@@ -777,7 +863,10 @@
     state.entries.push({ id: String(days) + "-" + Math.round(kg * 1000) + "-" + state.entries.length, date: date, kg: kg });
     save();
     $("a-weight").value = "";
+    $("a-date").value = toISO(new Date());
     render();
+    toast("Pesée enregistrée : " + fmtKg(kg) + " kg le " + shortDate(date) + ".");
+    $("a-weight").focus();
   });
 
   /* ---------- history actions ---------- */
@@ -906,7 +995,7 @@
       chips.push('<span class="chip accent"><i class="dot"></i>P' + (pct < 1 ? "<1" : pct > 99 ? ">99" : Math.round(pct)) + " sur la courbe OMS</span>");
     }
     chips.push('<span class="chip">' + pts.length + " pesée" + (pts.length > 1 ? "s" : "") + "</span>");
-    if (memoryOnly) chips.push('<span class="chip">stockage indisponible</span>');
+
     $("h-chips").innerHTML = chips.join("");
 
     /* stat — since birth */
@@ -961,6 +1050,10 @@
 
     /* contextual note */
     var note = "";
+    if (memoryOnly) {
+      note = "Ce navigateur refuse d’enregistrer les données (navigation privée ?). " +
+        "Les pesées restent affichées mais disparaîtront en fermant l’onglet — copie-les depuis « Réglages et données ».";
+    } else
     if (p.birthWeight && last.days <= 21 && last.kg < p.birthWeight) {
       var pctLost = (p.birthWeight - last.kg) / p.birthWeight * 100;
       note = "Le poids de naissance n’est pas encore repris (−" + nf(pctLost, 1) +
@@ -1213,8 +1306,73 @@
     });
   });
 
+  /* ================= install on the home screen ================= */
+
+  var deferredPrompt = null;
+
+  function isInstalled() {
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+
+  function setupInstallCard() {
+    var card = $("install-card");
+    if (isInstalled()) return;
+    try {
+      if (window.localStorage.getItem(KEY + "/install-hidden") === "1") return;
+    } catch (e) {}
+
+    var ua = navigator.userAgent || "";
+    var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var steps = $("install-steps");
+
+    if (isIOS) {
+      steps.innerHTML =
+        "<li>Touche le bouton <kbd>Partager</kbd> en bas de Safari.</li>" +
+        "<li>Choisis <kbd>Sur l’écran d’accueil</kbd>.</li>" +
+        "<li>Valide avec <kbd>Ajouter</kbd>.</li>";
+    } else {
+      steps.innerHTML =
+        "<li>Ouvre le menu <kbd>⋮</kbd> du navigateur.</li>" +
+        "<li>Choisis <kbd>Installer l’application</kbd> ou <kbd>Ajouter à l’écran d’accueil</kbd>.</li>";
+    }
+    show(card, true);
+  }
+
+  window.addEventListener("beforeinstallprompt", function (ev) {
+    ev.preventDefault();
+    deferredPrompt = ev;
+    var btn = $("install-btn");
+    btn.hidden = false;
+    show($("install-card"), true);
+  });
+
+  $("install-btn").addEventListener("click", function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function () {
+      deferredPrompt = null;
+      $("install-btn").hidden = true;
+    });
+  });
+
+  $("install-dismiss").addEventListener("click", function () {
+    show($("install-card"), false);
+    try { window.localStorage.setItem(KEY + "/install-hidden", "1"); } catch (e) {}
+  });
+
+  window.addEventListener("appinstalled", function () { show($("install-card"), false); });
+
+  /* Offline support. Best-effort: a blocked or missing worker changes nothing else. */
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+
   /* ================= boot ================= */
+  memoryOnly = !storageWorks();
   load();
   render();
+  setupInstallCard();
 })();
 </script>
