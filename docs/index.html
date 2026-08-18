@@ -141,8 +141,20 @@
   .sw-btn .sub {
     font-family: var(--mono); font-size: 11px; font-weight: 500; opacity: .75;
   }
-  .sw-add { font-weight: 500; color: var(--muted); background: transparent; }
-  .sw-add:hover { color: var(--ink); background: var(--surface); }
+  .sw-label {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); align-self: center; margin-right: 2px;
+  }
+
+  /* ---------- qui es-tu ---------- */
+  .who p { margin: 0 0 14px; font-size: 14.5px; color: var(--ink-2); }
+  .who .who-note { margin: 14px 0 0; font-size: 12.5px; color: var(--muted); }
+  .who-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .who-btn { font-size: 17px; padding: 16px 12px; }
+  .who-btn[aria-pressed="true"] { background: var(--accent-ink); }
+
+  .by { color: var(--muted); }
+  .vit-ok { color: var(--good); }
 
   /* ---------- cards ---------- */
   .card {
@@ -478,7 +490,15 @@
     <h1>Carnet de bébé</h1>
   </div>
 
-  <div class="switcher" id="switcher" role="group" aria-label="Choisir le profil"></div>
+  <div class="switcher" id="switcher" role="group" aria-label="Qui tient le carnet"></div>
+
+  <!-- ============ QUI ES-TU ============ -->
+  <section class="card who hidden" id="who-card">
+    <h2>Qui tient le carnet ?</h2>
+    <p>Chaque pesée, chaque change et chaque vitamine gardera ton prénom&nbsp;: on saura qui a fait quoi, et qui a déjà donné les vitamines aujourd’hui.</p>
+    <div class="who-buttons" id="who-buttons"></div>
+    <p class="who-note">Le choix est retenu sur cet appareil. Il se change en un geste depuis le haut de l’écran.</p>
+  </section>
 
   <!-- ============ SETUP (première visite) ============ -->
   <section class="card" id="setup-card">
@@ -617,6 +637,22 @@
     </details>
   </section>
 
+  <!-- ============ VITAMINES ============ -->
+  <section class="card hidden" id="vit-card">
+    <h2>Vitamines</h2>
+
+    <div class="dc-last">
+      <span class="dc-since" id="vit-state">—</span>
+      <span class="dc-when" id="vit-when"></span>
+    </div>
+
+    <div class="row">
+      <button class="btn" type="button" id="vit-btn">Vitamines données</button>
+    </div>
+
+    <ul class="changes" id="vit-list"></ul>
+  </section>
+
   <!-- ============ ADD ============ -->
   <section class="card hidden" id="add-card">
     <h2>Nouvelle pesée</h2>
@@ -689,8 +725,7 @@
     <details class="tools">
       <summary>Réglages et données</summary>
       <div class="row" style="margin-top: 12px;">
-        <button class="btn ghost small" type="button" id="btn-edit">Modifier le profil</button>
-        <button class="btn ghost small" type="button" id="btn-del-profile">Supprimer ce profil</button>
+        <button class="btn ghost small" type="button" id="btn-edit">Modifier le bébé</button>
         <button class="btn ghost small" type="button" id="btn-copy">Copier les données</button>
         <button class="btn ghost small" type="button" id="btn-import">Importer</button>
         <button class="btn ghost small" type="button" id="btn-reset">Tout effacer</button>
@@ -893,44 +928,24 @@
 
   /* ================= state ================= */
 
-  var KEY = "carnet-de-bebe/v2";
-  var LEGACY_KEY = "carnet-de-poids/v1";
+  var KEY = "carnet-de-bebe/v3";
+  var OLD_KEYS = ["carnet-de-bebe/v2", "carnet-de-poids/v1"];
+  var ME_KEY = "carnet-de-bebe/moi";
   var memoryOnly = false;
 
-  /* One record per child: identity, pesées and changes travel together, so
-     switching profile swaps the whole view with nothing left over. */
-  var db = { babies: [], activeId: null };
+  /* One baby, shared. Two people look after them, so every entry carries the
+     name of whoever recorded it — that is the whole point of the profiles. */
+  var db = {
+    baby: { name: "Bébé", sex: "f", birthDate: null, birthWeight: null,
+            entries: [], changes: [], vitamins: [] },
+    users: ["Fleur", "Raph"]
+  };
 
-  var SEED = [
-    { name: "Fleur", sex: "f" },
-    { name: "Raph",  sex: "m" }
-  ];
+  /* Who is holding this phone. Kept under its own key: it is a property of the
+     device, not of the carnet, so importing data never changes who you are. */
+  var me = null;
 
-  function newBaby(name, sex) {
-    return {
-      id: "b" + Math.round(Math.random() * 1e9).toString(36) + (db.babies.length + 1),
-      name: name, sex: sex === "m" ? "m" : "f",
-      birthDate: null, birthWeight: null,
-      entries: [], changes: []
-    };
-  }
-
-  /* The active child. Never null: the list is seeded and the id is repaired. */
-  function A() {
-    for (var i = 0; i < db.babies.length; i++) {
-      if (db.babies[i].id === db.activeId) return db.babies[i];
-    }
-    if (!db.babies.length) db.babies.push(newBaby(SEED[0].name, SEED[0].sex));
-    db.activeId = db.babies[0].id;
-    return db.babies[0];
-  }
-
-  function hasName(name) {
-    for (var i = 0; i < db.babies.length; i++) {
-      if (db.babies[i].name.toLowerCase() === name.toLowerCase()) return true;
-    }
-    return false;
-  }
+  function A() { return db.baby; }
 
   function storageWorks() {
     try {
@@ -942,59 +957,61 @@
     }
   }
 
-  function normalise(b) {
-    if (!b || typeof b !== "object") return null;
+  function arr(v) { return Array.isArray(v) ? v : []; }
+
+  function normalise(raw) {
+    var b = raw && typeof raw === "object" ? raw : {};
     return {
-      id: b.id || newBaby("", "f").id,
       name: b.name || "Bébé",
       sex: b.sex === "m" ? "m" : "f",
       birthDate: b.birthDate || null,
       birthWeight: typeof b.birthWeight === "number" ? b.birthWeight : null,
-      entries: Array.isArray(b.entries) ? b.entries : [],
-      changes: Array.isArray(b.changes) ? b.changes : []
+      entries: arr(b.entries),
+      changes: arr(b.changes),
+      vitamins: arr(b.vitamins)
     };
   }
 
-  function load() {
-    var parsed = null;
-    try {
-      var raw = window.localStorage.getItem(KEY);
-      if (raw) parsed = JSON.parse(raw);
-    } catch (e) {
-      memoryOnly = true;
+  /* Earlier versions stored either one profile or a list of children. Both
+     collapse to the single baby this carnet now follows. */
+  function adopt(parsed) {
+    if (!parsed || typeof parsed !== "object") return null;
+    if (parsed.baby) return normalise(parsed.baby);
+    if (Array.isArray(parsed.babies) && parsed.babies.length) {
+      var pick = parsed.babies.filter(function (b) { return b && b.birthDate; })[0];
+      return normalise(pick || parsed.babies[0]);
     }
-
-    var restored = false;
-    if (parsed && Array.isArray(parsed.babies) && parsed.babies.length) {
-      db.babies = parsed.babies.map(normalise).filter(Boolean);
-      db.activeId = parsed.activeId || db.babies[0].id;
-      restored = true;
-    } else {
-      /* A carnet saved before profiles existed holds a single child: keep it. */
-      try {
-        var old = window.localStorage.getItem(LEGACY_KEY);
-        if (old) {
-          var o = JSON.parse(old);
-          if (o && o.profile && o.profile.birthDate) {
-            db.babies.push(normalise({
-              name: o.profile.name, sex: o.profile.sex,
-              birthDate: o.profile.birthDate, birthWeight: o.profile.birthWeight,
-              entries: o.entries, changes: o.changes
-            }));
-          }
-        }
-      } catch (e) {}
-    }
-
-    /* Seed only on a carnet that was never saved: otherwise a profile the user
-       renamed or deleted would reappear on every load. */
-    if (!restored) {
-      SEED.forEach(function (seed) {
-        if (!hasName(seed.name)) db.babies.push(newBaby(seed.name, seed.sex));
+    if (parsed.profile) {
+      return normalise({
+        name: parsed.profile.name, sex: parsed.profile.sex,
+        birthDate: parsed.profile.birthDate, birthWeight: parsed.profile.birthWeight,
+        entries: parsed.entries, changes: parsed.changes
       });
     }
-    if (!db.activeId) db.activeId = db.babies[0].id;
-    A();
+    return null;
+  }
+
+  function load() {
+    var keys = [KEY].concat(OLD_KEYS);
+    for (var i = 0; i < keys.length; i++) {
+      var parsed = null;
+      try {
+        var raw = window.localStorage.getItem(keys[i]);
+        if (raw) parsed = JSON.parse(raw);
+      } catch (e) {
+        memoryOnly = true;
+      }
+      var adopted = adopt(parsed);
+      if (adopted) {
+        db.baby = adopted;
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
+        break;
+      }
+    }
+    try {
+      var who = window.localStorage.getItem(ME_KEY);
+      if (who && db.users.indexOf(who) >= 0) me = who;
+    } catch (e) {}
   }
 
   function save() {
@@ -1003,6 +1020,11 @@
     } catch (e) {
       memoryOnly = true;
     }
+  }
+
+  function setMe(name) {
+    me = name;
+    try { window.localStorage.setItem(ME_KEY, name); } catch (e) {}
   }
 
   /* Measurements sorted by date, birth weight always first. */
@@ -1017,7 +1039,7 @@
     });
     return out.map(function (e) {
       var d = daysBetween(A().birthDate, e.date);
-      return { id: e.id, date: e.date, kg: e.kg, birth: !!e.birth, days: d, months: d / DAYS_PER_MONTH };
+      return { id: e.id, date: e.date, kg: e.kg, by: e.by, birth: !!e.birth, days: d, months: d / DAYS_PER_MONTH };
     });
   }
 
@@ -1041,62 +1063,47 @@
 
   function show(el, on) { el.classList.toggle("hidden", !on); }
 
-  /* ---------- profils ---------- */
+  /* ---------- qui utilise le carnet ---------- */
 
   function esc(t) {
     return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  function renderSwitcher() {
-    var el = $("switcher");
-    el.innerHTML = db.babies.map(function (b) {
-      var sub = b.birthDate
-        ? ageLabel(daysBetween(b.birthDate, toISO(new Date())))
-        : "à compléter";
-      return '<button class="sw-btn" type="button" data-baby="' + b.id + '"' +
-        ' aria-pressed="' + (b.id === db.activeId ? "true" : "false") + '">' +
-        esc(b.name) + '<span class="sub">' + esc(sub) + "</span></button>";
-    }).join("") +
-    '<button class="sw-btn sw-add" type="button" id="sw-add">+ Profil</button>';
+  function userButtons(cls) {
+    return db.users.map(function (u) {
+      return '<button class="' + cls + '" type="button" data-user="' + esc(u) + '"' +
+        ' aria-pressed="' + (u === me ? "true" : "false") + '">' + esc(u) + "</button>";
+    }).join("");
   }
 
-  $("switcher").addEventListener("click", function (ev) {
-    var add = ev.target.closest("#sw-add");
-    if (add) {
-      var name = window.prompt("Prénom du nouveau profil ?");
-      if (name === null) return;
-      name = name.trim();
-      if (!name) return;
-      var b = newBaby(name, "f");
-      db.babies.push(b);
-      db.activeId = b.id;
-      save();
-      render();
-      return;
-    }
-    var btn = ev.target.closest("button[data-baby]");
+  function renderSwitcher() {
+    $("switcher").innerHTML = me
+      ? '<span class="sw-label">Carnet tenu par</span>' + userButtons("sw-btn")
+      : "";
+    $("who-buttons").innerHTML = userButtons("btn who-btn");
+  }
+
+  function pickUser(ev) {
+    var btn = ev.target.closest("button[data-user]");
     if (!btn) return;
-    db.activeId = btn.getAttribute("data-baby");
-    save();
-    $("setup-submit").textContent = "Commencer";
-    $("setup-cancel").hidden = true;
+    setMe(btn.getAttribute("data-user"));
     render();
-  });
+    setupInstallCard();
+  }
 
-  $("btn-del-profile").addEventListener("click", function () {
-    var b = A();
-    if (db.babies.length < 2) {
-      toolMsg("Il faut garder au moins un profil.");
-      return;
-    }
-    if (!window.confirm("Supprimer le profil de " + b.name + " et toutes ses données ?")) return;
-    db.babies = db.babies.filter(function (x) { return x.id !== b.id; });
-    db.activeId = db.babies[0].id;
-    save();
-    render();
-  });
+  $("switcher").addEventListener("click", pickUser);
+  $("who-buttons").addEventListener("click", pickUser);
 
-  /* ---------- setup ---------- */
+  /* Every record keeps the name that was active when it was made, so renaming
+     or switching later never rewrites who did what. */
+  function stamp() { return me || "?"; }
+
+  function byLabel(name) {
+    if (!name || name === "?") return "";
+    return name === me ? "toi" : name;
+  }
+
+  /* ---------- setup ---------- */  /* ---------- setup ---------- */
 
   $("setup-form").addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -1166,7 +1173,10 @@
     if (days < 0) { err.textContent = "Cette date précède la naissance."; return; }
 
     err.textContent = "";
-    A().entries.push({ id: String(days) + "-" + Math.round(kg * 1000) + "-" + A().entries.length, date: date, kg: kg });
+    A().entries.push({
+      id: String(days) + "-" + Math.round(kg * 1000) + "-" + A().entries.length,
+      date: date, kg: kg, by: stamp()
+    });
     save();
     $("a-weight").value = "";
     $("a-date").value = toISO(new Date());
@@ -1207,16 +1217,10 @@
     if (!box.value.trim()) { toolMsg("Colle d’abord des données dans le cadre."); return; }
     try {
       var parsed = JSON.parse(box.value);
-      var incoming = Array.isArray(parsed && parsed.babies)
-        ? parsed.babies
-        : (parsed && parsed.profile ? [{
-            name: parsed.profile.name, sex: parsed.profile.sex,
-            birthDate: parsed.profile.birthDate, birthWeight: parsed.profile.birthWeight,
-            entries: parsed.entries, changes: parsed.changes
-          }] : null);
-      if (!incoming || !incoming.length) throw new Error("format");
-      db.babies = incoming.map(normalise).filter(Boolean);
-      db.activeId = db.babies[0].id;
+      var adopted = adopt(parsed);
+      if (!adopted) throw new Error("format");
+      db.baby = adopted;
+      if (Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
       save();
       toolMsg("Données importées.");
       render();
@@ -1240,13 +1244,20 @@
 
   var fmtTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-  function sortedChanges() {
-    return A().changes.slice().sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+  /* Stamps are minute-precision, so two records often tie. Fall back to the
+     order they were added, newest first, or a change just noted would not
+     appear at the top of the list. */
+  function newestFirst(list) {
+    return list.map(function (x, i) { return { x: x, i: i }; })
+      .sort(function (a, b) { return a.x.at < b.x.at ? 1 : a.x.at > b.x.at ? -1 : b.i - a.i; })
+      .map(function (p) { return p.x; });
   }
+
+  function sortedChanges() { return newestFirst(A().changes); }
 
   function addChange(type, at) {
     if (!TYPES[type]) return;
-    A().changes.push({ id: "c" + at + "-" + A().changes.length, at: at, type: type });
+    A().changes.push({ id: "c" + at + "-" + A().changes.length, at: at, type: type, by: stamp() });
     save();
     renderChanges();
     var d = parseLocal(at);
@@ -1325,10 +1336,83 @@
       var when = parseLocal(c.at);
       var sameDay = c.at.slice(0, 10) === todayISO;
       var li = document.createElement("li");
+      var who = byLabel(c.by);
       li.innerHTML = marksHtml(c.type) +
-        '<span class="c-label">' + TYPES[c.type].label + "</span>" +
+        '<span class="c-label">' + TYPES[c.type].label +
+        (who ? ' <span class="by">· ' + esc(who) + "</span>" : "") + "</span>" +
         '<span class="c-time">' + (sameDay ? "" : shortDate(c.at.slice(0, 10)) + " · ") + fmtTime.format(when) + "</span>" +
         '<button class="del" type="button" data-delc="' + c.id + '" aria-label="Supprimer ce change">×</button>';
+      list.appendChild(li);
+    });
+  }
+
+  /* ---------- vitamines ---------- */
+
+  function sortedVitamins() { return newestFirst(A().vitamins); }
+
+  function lastVitaminToday() {
+    var today = toISO(new Date());
+    var all = sortedVitamins();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].at.slice(0, 10) === today) return all[i];
+    }
+    return null;
+  }
+
+  $("vit-btn").addEventListener("click", function () {
+    /* Two people, one bottle: the risk is a second dose, so say who gave the
+       first one and make the double explicit rather than silent. */
+    var already = lastVitaminToday();
+    if (already) {
+      var who = already.by && already.by !== "?" ? " par " + already.by : "";
+      if (!window.confirm("Déjà notées aujourd’hui" + who + " à " +
+          fmtTime.format(parseLocal(already.at)) + ". Noter quand même ?")) return;
+    }
+    var at = nowLocal();
+    A().vitamins.push({ id: "v" + at + "-" + A().vitamins.length, at: at, by: stamp() });
+    save();
+    renderVitamins();
+    toast("Vitamines notées à " + fmtTime.format(parseLocal(at)) + ".");
+  });
+
+  $("vit-list").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-delv]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-delv");
+    A().vitamins = A().vitamins.filter(function (v) { return v.id !== id; });
+    save();
+    renderVitamins();
+  });
+
+  function renderVitamins() {
+    var all = sortedVitamins();
+    var today = lastVitaminToday();
+    var todayISO = toISO(new Date());
+
+    if (today) {
+      $("vit-state").textContent = "Données aujourd’hui";
+      $("vit-state").className = "dc-since vit-ok";
+      $("vit-when").textContent = (byLabel(today.by) ? "par " + byLabel(today.by) + " " : "") +
+        "à " + fmtTime.format(parseLocal(today.at));
+    } else {
+      $("vit-state").textContent = "Pas encore aujourd’hui";
+      $("vit-state").className = "dc-since";
+      $("vit-when").textContent = all.length
+        ? "dernière le " + shortDate(all[0].at.slice(0, 10)) + " à " + fmtTime.format(parseLocal(all[0].at))
+        : "aucune notée pour l’instant";
+    }
+
+    var list = $("vit-list");
+    list.innerHTML = "";
+    all.slice(0, 7).forEach(function (v) {
+      var when = parseLocal(v.at);
+      var sameDay = v.at.slice(0, 10) === todayISO;
+      var who = byLabel(v.by);
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="c-label">Vitamines' +
+        (who ? ' <span class="by">· ' + esc(who) + "</span>" : "") + "</span>" +
+        '<span class="c-time">' + (sameDay ? "" : shortDate(v.at.slice(0, 10)) + " · ") + fmtTime.format(when) + "</span>" +
+        '<button class="del" type="button" data-delv="' + v.id + '" aria-label="Supprimer cette prise">×</button>';
       list.appendChild(li);
     });
   }
@@ -1348,18 +1432,27 @@
   /* ================= rendering ================= */
 
   function render() {
-    var hasProfile = !!A().birthDate;
     renderSwitcher();
-    $("setup-who").textContent = hasProfile
-      ? "Profil de " + A().name + "."
-      : "Profil de " + A().name + " — complète la date de naissance pour commencer.";
 
-    show(setupCard, !hasProfile);
+    /* Nothing is shown before we know who is holding the phone: every entry
+       made from here on is signed, so the name has to come first. */
+    var known = !!me;
+    var hasProfile = known && !!A().birthDate;
+
+    show($("who-card"), !known);
+    show(setupCard, known && !hasProfile);
     show(heroCard, hasProfile);
     show($("diaper-card"), hasProfile);
+    show($("vit-card"), hasProfile);
     show(chartCard, hasProfile);
     show(addCard, hasProfile);
     show(histCard, hasProfile);
+    if (!known) {
+      show($("install-card"), false);
+      return;
+    }
+
+    $("setup-who").textContent = hasProfile ? "" : "Complète la date de naissance pour commencer.";
 
     if (!hasProfile) {
       /* Fill every field from the active child — leaving another profile's
@@ -1370,9 +1463,8 @@
       $("s-birth").value = b.birthDate || toISO(new Date());
       $("s-bw").value = b.birthWeight == null ? "" : nf(b.birthWeight, 2);
       $("setup-err").textContent = "";
-      /* Clear the hidden cards too: they must never hold another child's data,
-         not even out of sight. */
       renderChanges();
+      renderVitamins();
       renderHistory([]);
       return;
     }
@@ -1383,6 +1475,7 @@
     var pts = series();
     renderHero(pts);
     renderChanges();
+    renderVitamins();
     $("dc-at").value = nowLocal();
     renderHistory(pts);
     drawChart();
@@ -1515,7 +1608,9 @@
       var rate = prev && dd > 0 ? dg / dd : null;
 
       tr.innerHTML =
-        "<td>" + shortDate(e.date) + (e.birth ? ' <span class="dim">naissance</span>' : "") + "</td>" +
+        "<td>" + shortDate(e.date) +
+          (e.birth ? ' <span class="dim">naissance</span>'
+                   : (byLabel(e.by) ? ' <span class="dim">· ' + esc(byLabel(e.by)) + "</span>" : "")) + "</td>" +
         '<td class="dim">' + ageShort(e.days) + "</td>" +
         "<td>" + fmtKg(e.kg) + " kg</td>" +
         '<td class="dim">' + (dg == null ? "—" : signed(dg) + " g") + "</td>" +
@@ -1809,6 +1904,6 @@
   memoryOnly = !storageWorks();
   load();
   render();
-  setupInstallCard();
+  if (me) setupInstallCard();
 })();
 </script>

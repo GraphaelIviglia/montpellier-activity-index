@@ -15,19 +15,33 @@ Application autonome, dans [`docs/`](docs/) : aucune dépendance, aucun serveur,
 aucune base de données. Les mêmes fichiers sont servis par Flask sur
 `/poids-bebe/` et publiables tels quels par GitHub Pages.
 
+**Qui tient le carnet**
+
+Un seul bébé, suivi à deux. À la première ouverture l'app demande qui utilise
+l'appareil — Fleur ou Raph — et chaque geste noté ensuite porte ce prénom :
+on sait qui a pesé, qui a changé la couche, qui a donné les vitamines. Le choix
+est retenu sur l'appareil, sous sa propre clé, et se change en un geste depuis
+le haut de l'écran. Les enregistrements gardent le nom qui était actif au moment
+où ils ont été faits.
+
 **Couches**
 
 - un bouton par contenu — pipi, caca, les deux — qui note le change à l'heure courante en un seul geste ;
 - temps écoulé depuis le dernier change, tenu à jour tant que la page reste ouverte ;
-- compte du jour détaillé par contenu, moyenne sur sept jours, et les dix derniers changes ;
+- compte du jour détaillé par contenu, moyenne sur sept jours, et les dix derniers changes avec leur auteur ;
 - rattrapage d'un change oublié à une autre heure, les heures futures étant refusées.
+
+**Vitamines**
+
+- la carte répond d'abord à la question qui compte à deux : est-ce que quelqu'un les a déjà données aujourd'hui, et qui ;
+- une seconde prise le même jour demande confirmation en rappelant l'heure et l'auteur de la première, pour éviter le doublon.
 
 **Poids**
 
 - saisie des pesées en kg ou en g, à partir du profil du bébé (prénom, sexe, date et poids de naissance) ;
 - courbe de poids comparée aux standards de croissance de l'OMS (poids-pour-âge, 0–24 mois) avec les zones P3–P97 et P15–P85 ;
 - prise depuis la naissance, depuis la dernière pesée, rythme en g/jour avec le repère attendu pour l'âge, et percentile estimé ;
-- historique modifiable, export/import des données en JSON.
+- historique modifiable et signé, export/import des données en JSON.
 
 Les données sont stockées dans le `localStorage` du navigateur : rien ne transite
 par le serveur. Si le navigateur refuse le stockage (navigation privée), l'app le
