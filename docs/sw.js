@@ -5,7 +5,7 @@
  * Bump CACHE when any of those files change: the old cache is then dropped.
  */
 
-var CACHE = "carnet-de-bebe-v2";
+var CACHE = "carnet-de-bebe-v3";
 
 var SHELL = [
   ".",

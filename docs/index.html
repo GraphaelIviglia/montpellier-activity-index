@@ -120,6 +120,30 @@
     letter-spacing: .07em;
   }
 
+  /* ---------- switcher ---------- */
+  .switcher { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
+  .sw-btn {
+    font-family: var(--sans); font-size: 15px; font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .sw-btn[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .sw-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sw-btn .sub {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; opacity: .75;
+  }
+  .sw-add { font-weight: 500; color: var(--muted); background: transparent; }
+  .sw-add:hover { color: var(--ink); background: var(--surface); }
+
   /* ---------- cards ---------- */
   .card {
     background: var(--surface);
@@ -454,6 +478,8 @@
     <h1>Carnet de bébé</h1>
   </div>
 
+  <div class="switcher" id="switcher" role="group" aria-label="Choisir le profil"></div>
+
   <!-- ============ SETUP (première visite) ============ -->
   <section class="card" id="setup-card">
     <h2>Le bébé</h2>
@@ -482,6 +508,7 @@
         </div>
       </div>
       <p class="err" id="setup-err" role="alert"></p>
+      <p class="err" id="setup-who" role="status" style="color: var(--muted);"></p>
       <div class="row">
         <button class="btn" type="submit" id="setup-submit">Commencer</button>
         <button class="btn ghost" type="button" id="setup-cancel" hidden>Annuler</button>
@@ -663,6 +690,7 @@
       <summary>Réglages et données</summary>
       <div class="row" style="margin-top: 12px;">
         <button class="btn ghost small" type="button" id="btn-edit">Modifier le profil</button>
+        <button class="btn ghost small" type="button" id="btn-del-profile">Supprimer ce profil</button>
         <button class="btn ghost small" type="button" id="btn-copy">Copier les données</button>
         <button class="btn ghost small" type="button" id="btn-import">Importer</button>
         <button class="btn ghost small" type="button" id="btn-reset">Tout effacer</button>
@@ -865,9 +893,44 @@
 
   /* ================= state ================= */
 
-  var KEY = "carnet-de-poids/v1";
+  var KEY = "carnet-de-bebe/v2";
+  var LEGACY_KEY = "carnet-de-poids/v1";
   var memoryOnly = false;
-  var state = { profile: null, entries: [], changes: [] };
+
+  /* One record per child: identity, pesées and changes travel together, so
+     switching profile swaps the whole view with nothing left over. */
+  var db = { babies: [], activeId: null };
+
+  var SEED = [
+    { name: "Fleur", sex: "f" },
+    { name: "Raph",  sex: "m" }
+  ];
+
+  function newBaby(name, sex) {
+    return {
+      id: "b" + Math.round(Math.random() * 1e9).toString(36) + (db.babies.length + 1),
+      name: name, sex: sex === "m" ? "m" : "f",
+      birthDate: null, birthWeight: null,
+      entries: [], changes: []
+    };
+  }
+
+  /* The active child. Never null: the list is seeded and the id is repaired. */
+  function A() {
+    for (var i = 0; i < db.babies.length; i++) {
+      if (db.babies[i].id === db.activeId) return db.babies[i];
+    }
+    if (!db.babies.length) db.babies.push(newBaby(SEED[0].name, SEED[0].sex));
+    db.activeId = db.babies[0].id;
+    return db.babies[0];
+  }
+
+  function hasName(name) {
+    for (var i = 0; i < db.babies.length; i++) {
+      if (db.babies[i].name.toLowerCase() === name.toLowerCase()) return true;
+    }
+    return false;
+  }
 
   function storageWorks() {
     try {
@@ -879,22 +942,64 @@
     }
   }
 
+  function normalise(b) {
+    if (!b || typeof b !== "object") return null;
+    return {
+      id: b.id || newBaby("", "f").id,
+      name: b.name || "Bébé",
+      sex: b.sex === "m" ? "m" : "f",
+      birthDate: b.birthDate || null,
+      birthWeight: typeof b.birthWeight === "number" ? b.birthWeight : null,
+      entries: Array.isArray(b.entries) ? b.entries : [],
+      changes: Array.isArray(b.changes) ? b.changes : []
+    };
+  }
+
   function load() {
+    var parsed = null;
     try {
       var raw = window.localStorage.getItem(KEY);
-      if (raw) {
-        var parsed = JSON.parse(raw);
-        if (parsed && parsed.profile) state = parsed;
-        if (!Array.isArray(state.entries)) state.entries = [];
-        if (!Array.isArray(state.changes)) state.changes = [];
-      }
+      if (raw) parsed = JSON.parse(raw);
     } catch (e) {
       memoryOnly = true;
     }
+
+    var restored = false;
+    if (parsed && Array.isArray(parsed.babies) && parsed.babies.length) {
+      db.babies = parsed.babies.map(normalise).filter(Boolean);
+      db.activeId = parsed.activeId || db.babies[0].id;
+      restored = true;
+    } else {
+      /* A carnet saved before profiles existed holds a single child: keep it. */
+      try {
+        var old = window.localStorage.getItem(LEGACY_KEY);
+        if (old) {
+          var o = JSON.parse(old);
+          if (o && o.profile && o.profile.birthDate) {
+            db.babies.push(normalise({
+              name: o.profile.name, sex: o.profile.sex,
+              birthDate: o.profile.birthDate, birthWeight: o.profile.birthWeight,
+              entries: o.entries, changes: o.changes
+            }));
+          }
+        }
+      } catch (e) {}
+    }
+
+    /* Seed only on a carnet that was never saved: otherwise a profile the user
+       renamed or deleted would reappear on every load. */
+    if (!restored) {
+      SEED.forEach(function (seed) {
+        if (!hasName(seed.name)) db.babies.push(newBaby(seed.name, seed.sex));
+      });
+    }
+    if (!db.activeId) db.activeId = db.babies[0].id;
+    A();
   }
+
   function save() {
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(state));
+      window.localStorage.setItem(KEY, JSON.stringify(db));
     } catch (e) {
       memoryOnly = true;
     }
@@ -902,16 +1007,16 @@
 
   /* Measurements sorted by date, birth weight always first. */
   function series() {
-    var out = state.entries.slice();
-    if (state.profile && state.profile.birthWeight) {
-      out.push({ id: "birth", date: state.profile.birthDate, kg: state.profile.birthWeight, birth: true });
+    var out = A().entries.slice();
+    if (A().birthWeight) {
+      out.push({ id: "birth", date: A().birthDate, kg: A().birthWeight, birth: true });
     }
     out.sort(function (a, b) {
       if (a.date === b.date) return a.birth ? -1 : b.birth ? 1 : 0;
       return a.date < b.date ? -1 : 1;
     });
     return out.map(function (e) {
-      var d = daysBetween(state.profile.birthDate, e.date);
+      var d = daysBetween(A().birthDate, e.date);
       return { id: e.id, date: e.date, kg: e.kg, birth: !!e.birth, days: d, months: d / DAYS_PER_MONTH };
     });
   }
@@ -935,6 +1040,61 @@
   var chartRange = "auto";
 
   function show(el, on) { el.classList.toggle("hidden", !on); }
+
+  /* ---------- profils ---------- */
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function renderSwitcher() {
+    var el = $("switcher");
+    el.innerHTML = db.babies.map(function (b) {
+      var sub = b.birthDate
+        ? ageLabel(daysBetween(b.birthDate, toISO(new Date())))
+        : "à compléter";
+      return '<button class="sw-btn" type="button" data-baby="' + b.id + '"' +
+        ' aria-pressed="' + (b.id === db.activeId ? "true" : "false") + '">' +
+        esc(b.name) + '<span class="sub">' + esc(sub) + "</span></button>";
+    }).join("") +
+    '<button class="sw-btn sw-add" type="button" id="sw-add">+ Profil</button>';
+  }
+
+  $("switcher").addEventListener("click", function (ev) {
+    var add = ev.target.closest("#sw-add");
+    if (add) {
+      var name = window.prompt("Prénom du nouveau profil ?");
+      if (name === null) return;
+      name = name.trim();
+      if (!name) return;
+      var b = newBaby(name, "f");
+      db.babies.push(b);
+      db.activeId = b.id;
+      save();
+      render();
+      return;
+    }
+    var btn = ev.target.closest("button[data-baby]");
+    if (!btn) return;
+    db.activeId = btn.getAttribute("data-baby");
+    save();
+    $("setup-submit").textContent = "Commencer";
+    $("setup-cancel").hidden = true;
+    render();
+  });
+
+  $("btn-del-profile").addEventListener("click", function () {
+    var b = A();
+    if (db.babies.length < 2) {
+      toolMsg("Il faut garder au moins un profil.");
+      return;
+    }
+    if (!window.confirm("Supprimer le profil de " + b.name + " et toutes ses données ?")) return;
+    db.babies = db.babies.filter(function (x) { return x.id !== b.id; });
+    db.activeId = db.babies[0].id;
+    save();
+    render();
+  });
 
   /* ---------- setup ---------- */
 
@@ -960,12 +1120,11 @@
       }
     }
     err.textContent = "";
-    state.profile = {
-      name: name || "Bébé",
-      sex: $("s-sex").value === "m" ? "m" : "f",
-      birthDate: birth,
-      birthWeight: bw
-    };
+    var b = A();
+    b.name = name || b.name || "Bébé";
+    b.sex = $("s-sex").value === "m" ? "m" : "f";
+    b.birthDate = birth;
+    b.birthWeight = bw;
     save();
     render();
   });
@@ -973,7 +1132,7 @@
   $("setup-cancel").addEventListener("click", function () { render(); });
 
   $("btn-edit").addEventListener("click", function () {
-    var p = state.profile;
+    var p = A();
     $("s-name").value = p.name === "Bébé" ? "" : p.name;
     $("s-sex").value = p.sex;
     $("s-birth").value = p.birthDate;
@@ -1003,11 +1162,11 @@
     var kg = $("a-unit").value === "g" ? val / 1000 : (val >= 100 ? val / 1000 : val);
     if (kg < 0.3 || kg > 30) { err.textContent = "Poids attendu entre 0,3 et 30 kg."; return; }
 
-    var days = daysBetween(state.profile.birthDate, date);
+    var days = daysBetween(A().birthDate, date);
     if (days < 0) { err.textContent = "Cette date précède la naissance."; return; }
 
     err.textContent = "";
-    state.entries.push({ id: String(days) + "-" + Math.round(kg * 1000) + "-" + state.entries.length, date: date, kg: kg });
+    A().entries.push({ id: String(days) + "-" + Math.round(kg * 1000) + "-" + A().entries.length, date: date, kg: kg });
     save();
     $("a-weight").value = "";
     $("a-date").value = toISO(new Date());
@@ -1022,7 +1181,7 @@
     var btn = ev.target.closest("button[data-del]");
     if (!btn) return;
     var id = btn.getAttribute("data-del");
-    state.entries = state.entries.filter(function (e) { return e.id !== id; });
+    A().entries = A().entries.filter(function (e) { return e.id !== id; });
     save();
     render();
   });
@@ -1048,12 +1207,16 @@
     if (!box.value.trim()) { toolMsg("Colle d’abord des données dans le cadre."); return; }
     try {
       var parsed = JSON.parse(box.value);
-      if (!parsed || !parsed.profile || !parsed.profile.birthDate) throw new Error("format");
-      state = {
-        profile: parsed.profile,
-        entries: Array.isArray(parsed.entries) ? parsed.entries : [],
-        changes: Array.isArray(parsed.changes) ? parsed.changes : []
-      };
+      var incoming = Array.isArray(parsed && parsed.babies)
+        ? parsed.babies
+        : (parsed && parsed.profile ? [{
+            name: parsed.profile.name, sex: parsed.profile.sex,
+            birthDate: parsed.profile.birthDate, birthWeight: parsed.profile.birthWeight,
+            entries: parsed.entries, changes: parsed.changes
+          }] : null);
+      if (!incoming || !incoming.length) throw new Error("format");
+      db.babies = incoming.map(normalise).filter(Boolean);
+      db.activeId = db.babies[0].id;
       save();
       toolMsg("Données importées.");
       render();
@@ -1063,9 +1226,10 @@
   });
 
   $("btn-reset").addEventListener("click", function () {
-    if (!window.confirm("Effacer le profil et toutes les pesées ? C’est définitif.")) return;
-    state = { profile: null, entries: [], changes: [] };
-    try { window.localStorage.removeItem(KEY); } catch (e) {}
+    var b = A();
+    if (!window.confirm("Effacer les pesées et les changes de " + b.name + " ? C’est définitif.")) return;
+    b.birthDate = null; b.birthWeight = null; b.entries = []; b.changes = [];
+    save();
     $("setup-form").reset();
     $("setup-submit").textContent = "Commencer";
     $("setup-cancel").hidden = true;
@@ -1077,12 +1241,12 @@
   var fmtTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   function sortedChanges() {
-    return state.changes.slice().sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+    return A().changes.slice().sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
   }
 
   function addChange(type, at) {
     if (!TYPES[type]) return;
-    state.changes.push({ id: "c" + at + "-" + state.changes.length, at: at, type: type });
+    A().changes.push({ id: "c" + at + "-" + A().changes.length, at: at, type: type });
     save();
     renderChanges();
     var d = parseLocal(at);
@@ -1109,7 +1273,7 @@
     var btn = ev.target.closest("button[data-delc]");
     if (!btn) return;
     var id = btn.getAttribute("data-delc");
-    state.changes = state.changes.filter(function (c) { return c.id !== id; });
+    A().changes = A().changes.filter(function (c) { return c.id !== id; });
     save();
     renderChanges();
   });
@@ -1184,7 +1348,11 @@
   /* ================= rendering ================= */
 
   function render() {
-    var hasProfile = !!(state.profile && state.profile.birthDate);
+    var hasProfile = !!A().birthDate;
+    renderSwitcher();
+    $("setup-who").textContent = hasProfile
+      ? "Profil de " + A().name + "."
+      : "Profil de " + A().name + " — complète la date de naissance pour commencer.";
 
     show(setupCard, !hasProfile);
     show(heroCard, hasProfile);
@@ -1194,7 +1362,18 @@
     show(histCard, hasProfile);
 
     if (!hasProfile) {
-      if (!$("s-birth").value) $("s-birth").value = toISO(new Date());
+      /* Fill every field from the active child — leaving another profile's
+         birth weight sitting in the form would silently attach it here. */
+      var b = A();
+      $("s-name").value = b.name;
+      $("s-sex").value = b.sex;
+      $("s-birth").value = b.birthDate || toISO(new Date());
+      $("s-bw").value = b.birthWeight == null ? "" : nf(b.birthWeight, 2);
+      $("setup-err").textContent = "";
+      /* Clear the hidden cards too: they must never hold another child's data,
+         not even out of sight. */
+      renderChanges();
+      renderHistory([]);
       return;
     }
 
@@ -1209,13 +1388,13 @@
     drawChart();
 
     var today = toISO(new Date());
-    if (!$("a-date").value || $("a-date").value < state.profile.birthDate) $("a-date").value = today;
-    $("a-date").min = state.profile.birthDate;
+    if (!$("a-date").value || $("a-date").value < A().birthDate) $("a-date").value = today;
+    $("a-date").min = A().birthDate;
     $("a-date").max = today;
   }
 
   function renderHero(pts) {
-    var p = state.profile;
+    var p = A();
     var todayDays = daysBetween(p.birthDate, toISO(new Date()));
 
     $("h-name").textContent = p.name;
@@ -1366,7 +1545,7 @@
     var old = plot.querySelector("svg");
     if (old) plot.removeChild(old);
 
-    var p = state.profile;
+    var p = A();
     var pts = series();
 
     var W = Math.max(280, plot.clientWidth || 320);
@@ -1553,7 +1732,7 @@
   window.addEventListener("resize", function () {
     if (rAF) window.cancelAnimationFrame(rAF);
     rAF = window.requestAnimationFrame(function () {
-      if (state.profile) drawChart();
+      if (A().birthDate) drawChart();
     });
   });
 
@@ -1621,9 +1800,9 @@
   }
 
   /* The elapsed time is the whole point of the line — keep it honest. */
-  window.setInterval(function () { if (state.profile) renderChanges(); }, 60000);
+  window.setInterval(function () { if (A().birthDate) renderChanges(); }, 60000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && state.profile) renderChanges();
+    if (!document.hidden && A().birthDate) renderChanges();
   });
 
   /* ================= boot ================= */
