@@ -243,6 +243,52 @@
     color: var(--ink-2);
   }
 
+  /* ---------- soins ---------- */
+  .tasks { display: flex; flex-direction: column; gap: 8px; }
+  .task {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; text-align: left;
+    font-family: var(--sans);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 12px 14px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .task:hover { border-color: var(--accent); background: var(--surface); }
+  .task:active { transform: scale(.995); }
+  .task:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .t-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .t-name { font-size: 16px; font-weight: 620; letter-spacing: -.01em; }
+  .t-when {
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .t-chip {
+    flex: none;
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .t-chip.due { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  .t-chip.ok  { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .t-go { flex: none; font-size: 20px; font-weight: 600; color: var(--muted); line-height: 1; }
+  .task:hover .t-go { color: var(--accent); }
+
+  .variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+
+  .admin-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--line-soft);
+  }
+  .admin-row:last-child { border-bottom: 0; }
+  .admin-row .a-name { flex: 1 1 auto; font-size: 14.5px; font-weight: 550; }
+  .admin-row select { flex: 0 1 auto; width: auto; font-size: 14px; padding: 6px 8px; }
+
+  .wrap-seg { flex-wrap: wrap; margin-bottom: 4px; }
+
   /* ---------- couches ---------- */
   .dc-last { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
   .dc-since { font-size: 26px; font-weight: 640; letter-spacing: -.02em; }
@@ -575,82 +621,39 @@
     <div class="note hidden" id="h-note"></div>
   </section>
 
-  <!-- ============ COUCHES ============ -->
-  <section class="card hidden" id="diaper-card">
-    <h2>Couches</h2>
+  <!-- ============ SOINS ============ -->
+  <section class="card hidden" id="care-card">
+    <h2>Soins</h2>
+    <div class="tasks" id="task-list"></div>
 
-    <div class="dc-last">
-      <span class="dc-since" id="dc-since">—</span>
-      <span class="dc-when" id="dc-when"></span>
-    </div>
-
-    <div class="types" id="dc-types" role="group" aria-label="Noter un change">
-      <button class="tbtn" type="button" data-type="pipi">
-        <span class="marks"><i class="mark pipi"></i></span>Pipi
-      </button>
-      <button class="tbtn" type="button" data-type="caca">
-        <span class="marks"><i class="mark caca"></i></span>Caca
-      </button>
-      <button class="tbtn" type="button" data-type="both">
-        <span class="marks"><i class="mark pipi"></i><i class="mark caca"></i></span>Les deux
-      </button>
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="k">Aujourd’hui</div>
-        <div class="v" id="dc-today">—</div>
-        <div class="n" id="dc-today-n"></div>
-      </div>
-      <div class="stat">
-        <div class="k">Moyenne 7 jours</div>
-        <div class="v" id="dc-avg">—</div>
-        <div class="n">repère : 5 à 6 couches mouillées par jour</div>
-      </div>
-    </div>
-
-    <ul class="changes" id="dc-list"></ul>
-    <p class="empty hidden" id="dc-empty">Aucun change noté pour l’instant.</p>
-
-    <details class="tools">
-      <summary>Noter à une autre heure</summary>
-      <form id="dc-form">
+    <details class="tools" id="care-tools">
+      <summary>Gérer les tâches</summary>
+      <div id="task-admin"></div>
+      <form id="task-form">
         <div class="row" style="margin-top: 12px;">
-          <div class="field">
-            <label for="dc-at">Date et heure</label>
-            <input id="dc-at" type="datetime-local" required />
+          <div class="field" style="flex: 2 1 160px;">
+            <label for="t-name">Nouvelle tâche</label>
+            <input id="t-name" type="text" autocomplete="off" placeholder="Bain, biberon, sieste…" />
           </div>
           <div class="field">
-            <label for="dc-type">Contenu</label>
-            <select id="dc-type">
-              <option value="pipi">Pipi</option>
-              <option value="caca">Caca</option>
-              <option value="both">Les deux</option>
-            </select>
+            <label for="t-freq">Fréquence</label>
+            <select id="t-freq"></select>
           </div>
         </div>
-        <p class="err" id="dc-err" role="alert"></p>
+        <p class="err" id="task-err" role="alert"></p>
         <div class="row">
-          <button class="btn small" type="submit">Noter ce change</button>
+          <button class="btn small" type="submit">Ajouter la tâche</button>
         </div>
       </form>
     </details>
   </section>
 
-  <!-- ============ VITAMINES ============ -->
-  <section class="card hidden" id="vit-card">
-    <h2>Vitamines</h2>
-
-    <div class="dc-last">
-      <span class="dc-since" id="vit-state">—</span>
-      <span class="dc-when" id="vit-when"></span>
-    </div>
-
-    <div class="row">
-      <button class="btn" type="button" id="vit-btn">Vitamines données</button>
-    </div>
-
-    <ul class="changes" id="vit-list"></ul>
+  <!-- ============ HISTORIQUE DES SOINS ============ -->
+  <section class="card hidden" id="log-card">
+    <h2>Qui a fait quoi</h2>
+    <div class="seg wrap-seg" id="log-filter" role="group" aria-label="Filtrer l’historique"></div>
+    <ul class="changes" id="log-list"></ul>
+    <p class="empty hidden" id="log-empty">Rien de noté pour l’instant.</p>
   </section>
 
   <!-- ============ ADD ============ -->
@@ -928,16 +931,31 @@
 
   /* ================= state ================= */
 
-  var KEY = "carnet-de-bebe/v3";
-  var OLD_KEYS = ["carnet-de-bebe/v2", "carnet-de-poids/v1"];
+  var KEY = "carnet-de-bebe/v4";
+  var OLD_KEYS = ["carnet-de-bebe/v3", "carnet-de-bebe/v2", "carnet-de-poids/v1"];
   var ME_KEY = "carnet-de-bebe/moi";
   var memoryOnly = false;
 
   /* One baby, shared. Two people look after them, so every entry carries the
      name of whoever recorded it — that is the whole point of the profiles. */
+  var COUCHE_VARIANTS = [
+    { key: "pipi", label: "Pipi" },
+    { key: "caca", label: "Caca" },
+    { key: "both", label: "Les deux" }
+  ];
+
+  function seedTasks() {
+    return [
+      { id: "couche",    name: "Couche",    freq: null,            variants: COUCHE_VARIANTS },
+      { id: "vitamines", name: "Vitamines", freq: { perDay: 1 },   variants: null },
+      { id: "bain",      name: "Bain",      freq: { everyH: 48 },  variants: null }
+    ];
+  }
+
   var db = {
-    baby: { name: "Bébé", sex: "f", birthDate: null, birthWeight: null,
-            entries: [], changes: [], vitamins: [] },
+    baby: { name: "Sacha", sex: "f", birthDate: null, birthWeight: null, entries: [] },
+    tasks: seedTasks(),
+    events: [],
     users: ["Fleur", "Raph"]
   };
 
@@ -962,31 +980,45 @@
   function normalise(raw) {
     var b = raw && typeof raw === "object" ? raw : {};
     return {
-      name: b.name || "Bébé",
+      name: b.name || "Sacha",
       sex: b.sex === "m" ? "m" : "f",
       birthDate: b.birthDate || null,
       birthWeight: typeof b.birthWeight === "number" ? b.birthWeight : null,
-      entries: arr(b.entries),
-      changes: arr(b.changes),
-      vitamins: arr(b.vitamins)
+      entries: arr(b.entries)
     };
+  }
+
+  /* The fixed couche and vitamine lists became ordinary tasks: carry their
+     history over so nothing recorded before is lost. */
+  function eventsFromLegacy(b) {
+    var out = [];
+    arr(b && b.changes).forEach(function (c) {
+      if (c && c.at) out.push({ id: c.id || ("e" + c.at + out.length), taskId: "couche", at: c.at, by: c.by, variant: c.type || null });
+    });
+    arr(b && b.vitamins).forEach(function (v) {
+      if (v && v.at) out.push({ id: v.id || ("e" + v.at + out.length), taskId: "vitamines", at: v.at, by: v.by, variant: null });
+    });
+    return out;
   }
 
   /* Earlier versions stored either one profile or a list of children. Both
      collapse to the single baby this carnet now follows. */
   function adopt(parsed) {
+    adopt.source = null;
     if (!parsed || typeof parsed !== "object") return null;
-    if (parsed.baby) return normalise(parsed.baby);
+    if (parsed.baby) { adopt.source = parsed.baby; return normalise(parsed.baby); }
     if (Array.isArray(parsed.babies) && parsed.babies.length) {
-      var pick = parsed.babies.filter(function (b) { return b && b.birthDate; })[0];
-      return normalise(pick || parsed.babies[0]);
+      var pick = parsed.babies.filter(function (b) { return b && b.birthDate; })[0] || parsed.babies[0];
+      adopt.source = pick;
+      return normalise(pick);
     }
     if (parsed.profile) {
-      return normalise({
+      adopt.source = {
         name: parsed.profile.name, sex: parsed.profile.sex,
         birthDate: parsed.profile.birthDate, birthWeight: parsed.profile.birthWeight,
         entries: parsed.entries, changes: parsed.changes
-      });
+      };
+      return normalise(adopt.source);
     }
     return null;
   }
@@ -1005,6 +1037,10 @@
       if (adopted) {
         db.baby = adopted;
         if (parsed && Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
+        if (parsed && Array.isArray(parsed.tasks) && parsed.tasks.length) db.tasks = parsed.tasks;
+        db.events = parsed && Array.isArray(parsed.events)
+          ? parsed.events
+          : eventsFromLegacy(adopt.source);
         break;
       }
     }
@@ -1240,12 +1276,12 @@
     render();
   });
 
-  /* ---------- couches ---------- */
+  /* ---------- soins : des tâches, pas des cartes figées ---------- */
 
   var fmtTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   /* Stamps are minute-precision, so two records often tie. Fall back to the
-     order they were added, newest first, or a change just noted would not
+     order they were added, newest first, or something just noted would not
      appear at the top of the list. */
   function newestFirst(list) {
     return list.map(function (x, i) { return { x: x, i: i }; })
@@ -1253,166 +1289,279 @@
       .map(function (p) { return p.x; });
   }
 
-  function sortedChanges() { return newestFirst(A().changes); }
+  /* Frequency presets. Two shapes, because they answer different questions:
+     "combien de fois aujourd'hui" for a daily dose, "quand la prochaine" for
+     something on a rolling clock. */
+  var FREQS = [
+    { key: "",     label: "Au besoin",        freq: null },
+    { key: "1j",   label: "1 × par jour",     freq: { perDay: 1 } },
+    { key: "2j",   label: "2 × par jour",     freq: { perDay: 2 } },
+    { key: "3j",   label: "3 × par jour",     freq: { perDay: 3 } },
+    { key: "4j",   label: "4 × par jour",     freq: { perDay: 4 } },
+    { key: "h3",   label: "Toutes les 3 h",   freq: { everyH: 3 } },
+    { key: "h4",   label: "Toutes les 4 h",   freq: { everyH: 4 } },
+    { key: "h6",   label: "Toutes les 6 h",   freq: { everyH: 6 } },
+    { key: "h12",  label: "Toutes les 12 h",  freq: { everyH: 12 } },
+    { key: "h48",  label: "Tous les 2 jours", freq: { everyH: 48 } },
+    { key: "h168", label: "1 × par semaine",  freq: { everyH: 168 } }
+  ];
 
-  function addChange(type, at) {
-    if (!TYPES[type]) return;
-    A().changes.push({ id: "c" + at + "-" + A().changes.length, at: at, type: type, by: stamp() });
-    save();
-    renderChanges();
-    var d = parseLocal(at);
-    toast("Change noté : " + TYPES[type].label.toLowerCase() + " à " + fmtTime.format(d) + ".");
+  function sameFreq(a, b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a.perDay === b.perDay && a.everyH === b.everyH;
   }
-
-  $("dc-types").addEventListener("click", function (ev) {
-    var btn = ev.target.closest("button[data-type]");
-    if (!btn) return;
-    addChange(btn.getAttribute("data-type"), nowLocal());
-  });
-
-  $("dc-form").addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var at = $("dc-at").value;
-    var err = $("dc-err");
-    if (!at) { err.textContent = "Choisis une date et une heure."; return; }
-    if (parseLocal(at) - new Date() > 60000) { err.textContent = "Cette heure est dans le futur."; return; }
-    err.textContent = "";
-    addChange($("dc-type").value, at.slice(0, 16));
-  });
-
-  $("dc-list").addEventListener("click", function (ev) {
-    var btn = ev.target.closest("button[data-delc]");
-    if (!btn) return;
-    var id = btn.getAttribute("data-delc");
-    A().changes = A().changes.filter(function (c) { return c.id !== id; });
-    save();
-    renderChanges();
-  });
-
-  function renderChanges() {
-    var all = sortedChanges();
-    var now = new Date();
-    var todayISO = toISO(now);
-
-    /* last change */
-    if (all.length) {
-      var d = parseLocal(all[0].at);
-      /* floor, not round: stamps are minute-precision, so a change noted 40 s ago
-         must read "à l’instant" rather than being rounded up to a minute. */
-      var mins = Math.max(0, Math.floor((now - d) / 60000));
-      $("dc-since").textContent = sinceLabel(mins);
-      $("dc-when").innerHTML = marksHtml(all[0].type) + " " + TYPES[all[0].type].label.toLowerCase() +
-        " · " + (all[0].at.slice(0, 10) === todayISO ? "" : shortDate(all[0].at.slice(0, 10)) + " ") + fmtTime.format(d);
-    } else {
-      $("dc-since").textContent = "—";
-      $("dc-when").textContent = "aucun change noté";
-    }
-
-    /* today */
-    var today = all.filter(function (c) { return c.at.slice(0, 10) === todayISO; });
-    var wet = today.filter(function (c) { return c.type !== "caca"; }).length;
-    var soiled = today.filter(function (c) { return c.type !== "pipi"; }).length;
-    $("dc-today").textContent = today.length + (today.length > 1 ? " changes" : " change");
-    $("dc-today-n").textContent = today.length
-      ? wet + " avec pipi · " + soiled + " avec caca"
-      : "rien de noté aujourd’hui";
-
-    /* 7-day average, counted over the days actually covered */
-    var since = new Date(now.getTime() - 6 * 86400000);
-    var window7 = all.filter(function (c) { return parseLocal(c.at) >= since; });
-    if (window7.length) {
-      var firstDay = parseLocal(window7[window7.length - 1].at);
-      var days = Math.max(1, Math.round((now - firstDay) / 86400000) + 1);
-      $("dc-avg").textContent = nf(window7.length / days, 1) + " / jour";
-    } else {
-      $("dc-avg").textContent = "—";
-    }
-
-    /* recent list */
-    var list = $("dc-list");
-    list.innerHTML = "";
-    show($("dc-empty"), all.length === 0);
-    all.slice(0, 10).forEach(function (c) {
-      var when = parseLocal(c.at);
-      var sameDay = c.at.slice(0, 10) === todayISO;
-      var li = document.createElement("li");
-      var who = byLabel(c.by);
-      li.innerHTML = marksHtml(c.type) +
-        '<span class="c-label">' + TYPES[c.type].label +
-        (who ? ' <span class="by">· ' + esc(who) + "</span>" : "") + "</span>" +
-        '<span class="c-time">' + (sameDay ? "" : shortDate(c.at.slice(0, 10)) + " · ") + fmtTime.format(when) + "</span>" +
-        '<button class="del" type="button" data-delc="' + c.id + '" aria-label="Supprimer ce change">×</button>';
-      list.appendChild(li);
-    });
+  function freqKey(f) {
+    for (var i = 0; i < FREQS.length; i++) if (sameFreq(FREQS[i].freq, f)) return FREQS[i].key;
+    return "";
   }
-
-  /* ---------- vitamines ---------- */
-
-  function sortedVitamins() { return newestFirst(A().vitamins); }
-
-  function lastVitaminToday() {
-    var today = toISO(new Date());
-    var all = sortedVitamins();
-    for (var i = 0; i < all.length; i++) {
-      if (all[i].at.slice(0, 10) === today) return all[i];
-    }
+  function freqFromKey(k) {
+    for (var i = 0; i < FREQS.length; i++) if (FREQS[i].key === k) return FREQS[i].freq;
     return null;
   }
 
-  $("vit-btn").addEventListener("click", function () {
-    /* Two people, one bottle: the risk is a second dose, so say who gave the
-       first one and make the double explicit rather than silent. */
-    var already = lastVitaminToday();
-    if (already) {
-      var who = already.by && already.by !== "?" ? " par " + already.by : "";
-      if (!window.confirm("Déjà notées aujourd’hui" + who + " à " +
-          fmtTime.format(parseLocal(already.at)) + ". Noter quand même ?")) return;
+  function taskById(id) {
+    for (var i = 0; i < db.tasks.length; i++) if (db.tasks[i].id === id) return db.tasks[i];
+    return null;
+  }
+
+  function eventsFor(id) {
+    return newestFirst(db.events.filter(function (e) { return e.taskId === id; }));
+  }
+
+  function variantLabel(t, key) {
+    if (!t || !t.variants) return "";
+    for (var i = 0; i < t.variants.length; i++) if (t.variants[i].key === key) return t.variants[i].label;
+    return key;
+  }
+
+  function taskStatus(t) {
+    var evs = eventsFor(t.id);
+    var last = evs[0] || null;
+    var now = new Date();
+    var todayISO = toISO(now);
+    var doneToday = evs.filter(function (e) { return e.at.slice(0, 10) === todayISO; }).length;
+
+    var state = "none", chip = "";
+    if (t.freq && t.freq.perDay) {
+      state = doneToday >= t.freq.perDay ? "ok" : "due";
+      chip = doneToday + " / " + t.freq.perDay + " aujourd’hui";
+    } else if (t.freq && t.freq.everyH) {
+      if (!last) { state = "due"; chip = "à faire"; }
+      else {
+        var due = parseLocal(last.at).getTime() + t.freq.everyH * 3600000;
+        state = now.getTime() >= due ? "due" : "ok";
+        chip = state === "due"
+          ? "à faire"
+          : "dans " + sinceLabel(Math.floor((due - now.getTime()) / 60000)).replace("il y a ", "");
+      }
     }
-    var at = nowLocal();
-    A().vitamins.push({ id: "v" + at + "-" + A().vitamins.length, at: at, by: stamp() });
-    save();
-    renderVitamins();
-    toast("Vitamines notées à " + fmtTime.format(parseLocal(at)) + ".");
-  });
 
-  $("vit-list").addEventListener("click", function (ev) {
-    var btn = ev.target.closest("button[data-delv]");
-    if (!btn) return;
-    var id = btn.getAttribute("data-delv");
-    A().vitamins = A().vitamins.filter(function (v) { return v.id !== id; });
-    save();
-    renderVitamins();
-  });
-
-  function renderVitamins() {
-    var all = sortedVitamins();
-    var today = lastVitaminToday();
-    var todayISO = toISO(new Date());
-
-    if (today) {
-      $("vit-state").textContent = "Données aujourd’hui";
-      $("vit-state").className = "dc-since vit-ok";
-      $("vit-when").textContent = (byLabel(today.by) ? "par " + byLabel(today.by) + " " : "") +
-        "à " + fmtTime.format(parseLocal(today.at));
+    var when;
+    if (last) {
+      var w = byLabel(last.by);
+      when = sinceLabel(Math.max(0, Math.floor((now - parseLocal(last.at)) / 60000))) +
+        (w ? " · " + w : "") +
+        (last.variant ? " · " + variantLabel(t, last.variant).toLowerCase() : "");
     } else {
-      $("vit-state").textContent = "Pas encore aujourd’hui";
-      $("vit-state").className = "dc-since";
-      $("vit-when").textContent = all.length
-        ? "dernière le " + shortDate(all[0].at.slice(0, 10)) + " à " + fmtTime.format(parseLocal(all[0].at))
-        : "aucune notée pour l’instant";
+      when = "jamais noté";
     }
 
-    var list = $("vit-list");
+    return { state: state, chip: chip, when: when, last: last, doneToday: doneToday };
+  }
+
+  function logEvent(taskId, variant) {
+    var t = taskById(taskId);
+    if (!t) return;
+
+    /* On a rhythm, a second one before it is due is usually a slip — name what
+       is already recorded rather than stacking a silent duplicate. */
+    var st = taskStatus(t);
+    if (t.freq && st.state === "ok" && st.last) {
+      var who = byLabel(st.last.by);
+      if (!window.confirm(t.name + " : déjà noté" + (who ? " par " + who : "") +
+          " à " + fmtTime.format(parseLocal(st.last.at)) + ". Noter quand même ?")) return;
+    }
+
+    var at = nowLocal();
+    db.events.push({
+      id: "e" + at + "-" + db.events.length,
+      taskId: taskId, at: at, by: stamp(), variant: variant || null
+    });
+    save();
+    renderCare();
+    renderLog();
+    toast(t.name + (variant ? " · " + variantLabel(t, variant).toLowerCase() : "") +
+      " · noté à " + fmtTime.format(parseLocal(at)) + ".");
+  }
+
+  function renderCare() {
+    /* Keep an open variant panel open across the re-render. */
+    var open = {};
+    Array.prototype.forEach.call($("task-list").querySelectorAll(".variants:not(.hidden)"), function (v) {
+      open[v.getAttribute("data-for")] = true;
+    });
+
+    $("task-list").innerHTML = db.tasks.map(function (t) {
+      var st = taskStatus(t);
+      var row = '<button class="task" type="button" data-task="' + esc(t.id) + '">' +
+        '<span class="t-main"><span class="t-name">' + esc(t.name) + "</span>" +
+        '<span class="t-when">' + esc(st.when) + "</span></span>" +
+        (st.chip
+          ? '<span class="t-chip ' + st.state + '">' + esc(st.chip) + "</span>"
+          : '<span class="t-go" aria-hidden="true">+</span>') +
+        "</button>";
+      if (t.variants) {
+        row += '<div class="variants' + (open[t.id] ? "" : " hidden") + '" data-for="' + esc(t.id) + '">' +
+          t.variants.map(function (v) {
+            return '<button class="tbtn" type="button" data-task="' + esc(t.id) +
+              '" data-variant="' + esc(v.key) + '">' + marksHtml(v.key) + esc(v.label) + "</button>";
+          }).join("") + "</div>";
+      }
+      return row;
+    }).join("");
+  }
+
+  $("task-list").addEventListener("click", function (ev) {
+    var vb = ev.target.closest("button[data-variant]");
+    if (vb) {
+      logEvent(vb.getAttribute("data-task"), vb.getAttribute("data-variant"));
+      return;
+    }
+    var tb = ev.target.closest("button[data-task]");
+    if (!tb) return;
+    var t = taskById(tb.getAttribute("data-task"));
+    if (!t) return;
+    if (t.variants) {
+      /* Ask what was in it before recording — that is the point of the task. */
+      var panel = $("task-list").querySelector('.variants[data-for="' + t.id + '"]');
+      if (panel) panel.classList.toggle("hidden");
+      return;
+    }
+    logEvent(t.id, null);
+  });
+
+  /* ---------- gérer les tâches ---------- */
+
+  function freqOptions(selected) {
+    return FREQS.map(function (f) {
+      return '<option value="' + f.key + '"' + (f.key === selected ? " selected" : "") +
+        ">" + esc(f.label) + "</option>";
+    }).join("");
+  }
+
+  function renderTaskAdmin() {
+    if (!$("t-freq").options.length) $("t-freq").innerHTML = freqOptions("");
+    $("task-admin").innerHTML = db.tasks.map(function (t) {
+      return '<div class="admin-row">' +
+        '<span class="a-name">' + esc(t.name) + "</span>" +
+        '<select data-task="' + esc(t.id) + '" aria-label="Fréquence de ' + esc(t.name) + '">' +
+          freqOptions(freqKey(t.freq)) + "</select>" +
+        '<button class="del" type="button" data-delt="' + esc(t.id) +
+          '" aria-label="Supprimer ' + esc(t.name) + '">×</button>' +
+        "</div>";
+    }).join("");
+  }
+
+  $("task-admin").addEventListener("change", function (ev) {
+    var sel = ev.target.closest("select[data-task]");
+    if (!sel) return;
+    var t = taskById(sel.getAttribute("data-task"));
+    if (!t) return;
+    t.freq = freqFromKey(sel.value);
+    save();
+    renderCare();
+  });
+
+  $("task-admin").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-delt]");
+    if (!btn) return;
+    var t = taskById(btn.getAttribute("data-delt"));
+    if (!t) return;
+    var kept = eventsFor(t.id).length;
+    if (!window.confirm("Supprimer « " + t.name + " » ?" +
+        (kept ? " Ses " + kept + " entrées d’historique partent aussi." : ""))) return;
+    db.tasks = db.tasks.filter(function (x) { return x.id !== t.id; });
+    db.events = db.events.filter(function (e) { return e.taskId !== t.id; });
+    if (logFilter === t.id) logFilter = "";
+    save();
+    renderCare(); renderTaskAdmin(); renderLog();
+  });
+
+  $("task-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var name = $("t-name").value.trim();
+    var err = $("task-err");
+    if (!name) { err.textContent = "Donne un nom à la tâche."; return; }
+    for (var i = 0; i < db.tasks.length; i++) {
+      if (db.tasks[i].name.toLowerCase() === name.toLowerCase()) {
+        err.textContent = "Cette tâche existe déjà.";
+        return;
+      }
+    }
+    err.textContent = "";
+    db.tasks.push({
+      id: "t" + Math.round(Math.random() * 1e9).toString(36) + db.tasks.length,
+      name: name, freq: freqFromKey($("t-freq").value), variants: null
+    });
+    save();
+    $("t-name").value = "";
+    renderCare(); renderTaskAdmin(); renderLog();
+    toast("Tâche « " + name + " » ajoutée.");
+  });
+
+  /* ---------- qui a fait quoi ---------- */
+
+  var logFilter = "";
+
+  $("log-filter").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-filter]");
+    if (!btn) return;
+    logFilter = btn.getAttribute("data-filter");
+    renderLog();
+  });
+
+  $("log-list").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-dele]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-dele");
+    db.events = db.events.filter(function (e) { return e.id !== id; });
+    save();
+    renderCare(); renderLog();
+  });
+
+  function renderLog() {
+    $("log-filter").innerHTML =
+      '<button type="button" data-filter="" aria-pressed="' + (logFilter ? "false" : "true") + '">Tout</button>' +
+      db.tasks.map(function (t) {
+        return '<button type="button" data-filter="' + esc(t.id) + '" aria-pressed="' +
+          (logFilter === t.id ? "true" : "false") + '">' + esc(t.name) + "</button>";
+      }).join("");
+
+    var all = newestFirst(db.events).filter(function (e) {
+      return !logFilter || e.taskId === logFilter;
+    });
+
+    var todayISO = toISO(new Date());
+    var list = $("log-list");
     list.innerHTML = "";
-    all.slice(0, 7).forEach(function (v) {
-      var when = parseLocal(v.at);
-      var sameDay = v.at.slice(0, 10) === todayISO;
-      var who = byLabel(v.by);
+    show($("log-empty"), all.length === 0);
+
+    all.slice(0, 40).forEach(function (e) {
+      var t = taskById(e.taskId);
+      var when = parseLocal(e.at);
+      var sameDay = e.at.slice(0, 10) === todayISO;
+      var who = byLabel(e.by);
       var li = document.createElement("li");
-      li.innerHTML = '<span class="c-label">Vitamines' +
-        (who ? ' <span class="by">· ' + esc(who) + "</span>" : "") + "</span>" +
-        '<span class="c-time">' + (sameDay ? "" : shortDate(v.at.slice(0, 10)) + " · ") + fmtTime.format(when) + "</span>" +
-        '<button class="del" type="button" data-delv="' + v.id + '" aria-label="Supprimer cette prise">×</button>';
+      li.innerHTML =
+        (t && t.variants && e.variant ? marksHtml(e.variant) : '<span class="marks"></span>') +
+        '<span class="c-label">' + esc(t ? t.name : "tâche supprimée") +
+          (e.variant && t ? ' <span class="by">' + esc(variantLabel(t, e.variant).toLowerCase()) + "</span>" : "") +
+          (who ? ' <span class="by">· ' + esc(who) + "</span>" : "") + "</span>" +
+        '<span class="c-time">' + (sameDay ? "" : shortDate(e.at.slice(0, 10)) + " · ") +
+          fmtTime.format(when) + "</span>" +
+        '<button class="del" type="button" data-dele="' + esc(e.id) +
+          '" aria-label="Supprimer cette entrée">×</button>';
       list.appendChild(li);
     });
   }
@@ -1442,8 +1591,8 @@
     show($("who-card"), !known);
     show(setupCard, known && !hasProfile);
     show(heroCard, hasProfile);
-    show($("diaper-card"), hasProfile);
-    show($("vit-card"), hasProfile);
+    show($("care-card"), hasProfile);
+    show($("log-card"), hasProfile);
     show(chartCard, hasProfile);
     show(addCard, hasProfile);
     show(histCard, hasProfile);
@@ -1463,8 +1612,6 @@
       $("s-birth").value = b.birthDate || toISO(new Date());
       $("s-bw").value = b.birthWeight == null ? "" : nf(b.birthWeight, 2);
       $("setup-err").textContent = "";
-      renderChanges();
-      renderVitamins();
       renderHistory([]);
       return;
     }
@@ -1474,9 +1621,9 @@
 
     var pts = series();
     renderHero(pts);
-    renderChanges();
-    renderVitamins();
-    $("dc-at").value = nowLocal();
+    renderCare();
+    renderTaskAdmin();
+    renderLog();
     renderHistory(pts);
     drawChart();
 
@@ -1895,9 +2042,9 @@
   }
 
   /* The elapsed time is the whole point of the line — keep it honest. */
-  window.setInterval(function () { if (A().birthDate) renderChanges(); }, 60000);
+  window.setInterval(function () { if (me && A().birthDate) renderCare(); }, 60000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && A().birthDate) renderChanges();
+    if (!document.hidden && me && A().birthDate) renderCare();
   });
 
   /* ================= boot ================= */

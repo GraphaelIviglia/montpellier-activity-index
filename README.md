@@ -24,17 +24,18 @@ est retenu sur l'appareil, sous sa propre clé, et se change en un geste depuis
 le haut de l'écran. Les enregistrements gardent le nom qui était actif au moment
 où ils ont été faits.
 
-**Couches**
+**Soins**
 
-- un bouton par contenu — pipi, caca, les deux — qui note le change à l'heure courante en un seul geste ;
-- temps écoulé depuis le dernier change, tenu à jour tant que la page reste ouverte ;
-- compte du jour détaillé par contenu, moyenne sur sept jours, et les dix derniers changes avec leur auteur ;
-- rattrapage d'un change oublié à une autre heure, les heures futures étant refusées.
+- une liste de tâches, pas des cartes figées : Couche, Vitamines et Bain sont fournies, on en ajoute autant qu'on veut (biberon, sieste, médicament…) ;
+- une tâche se note en un geste ; celles qui ont des variantes — la couche : pipi, caca, les deux — demandent laquelle avant d'enregistrer ;
+- chaque tâche peut recevoir une fréquence, de deux natures : « N fois par jour », qui affiche le compte du jour, ou « toutes les X heures », qui affiche l'échéance ;
+- une tâche déjà faite dans son rythme demande confirmation avant un doublon, en rappelant l'heure et l'auteur du précédent ;
+- la fréquence se change et la tâche se supprime depuis « Gérer les tâches ».
 
-**Vitamines**
+**Qui a fait quoi**
 
-- la carte répond d'abord à la question qui compte à deux : est-ce que quelqu'un les a déjà données aujourd'hui, et qui ;
-- une seconde prise le même jour demande confirmation en rappelant l'heure et l'auteur de la première, pour éviter le doublon.
+Un historique unique, du plus récent au plus ancien : la tâche, sa variante, le
+prénom de qui l'a faite et l'heure. Filtrable par tâche, chaque ligne supprimable.
 
 **Poids**
 
