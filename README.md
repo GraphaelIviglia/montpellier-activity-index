@@ -53,18 +53,20 @@ dit au lieu de perdre les pesées en silence.
 L'app est une PWA : manifeste, icônes et service worker (`docs/sw.js`) qui met en
 cache la coquille, ce qui la rend utilisable sans réseau une fois installée.
 
-Deux façons de publier l'URL d'installation :
+L'icône n'apparaît sur l'écran d'accueil que si l'app est servie depuis son
+propre domaine. Hébergée dans le cadre d'un autre site, c'est l'icône du site
+hôte qui est retenue.
 
-- **Automatique** — le workflow [`pages.yml`](.github/workflows/pages.yml) publie
-  `docs/` à chaque poussée sur `main` et active Pages lui-même au premier passage
-  (`configure-pages` avec `enablement: true`).
-- **Manuelle** — **Settings → Pages → Deploy from a branch**, en choisissant la
-  branche voulue et le dossier `/docs`. Utile pour publier une branche de travail
-  sans passer par `main`.
+**Déploiement Vercel.** Le dossier `docs/` est un site statique complet. Sur
+Vercel : *Add New → Project*, choisir ce dépôt, régler **Root Directory** sur
+`docs`, déployer. Aucune commande de build. `docs/vercel.json` empêche la mise en
+cache du service worker et du manifeste, sinon une version installée resterait
+figée. Les poussées suivantes sur la branche de production se déploient seules.
 
-Dans les deux cas l'app est servie à
-`https://<compte>.github.io/montpellier-activity-index/` — le chemin du dépôt
-compte, la racine du domaine ne renvoie rien.
+**GitHub Pages, en variante.** *Settings → Pages → Deploy from a branch*, branche
+`main`, dossier `/docs`. Le workflow [`pages.yml`](.github/workflows/pages.yml)
+tente aussi l'activation automatique, mais le jeton d'Actions n'a pas toujours le
+droit de créer le site.
 
 Le service worker exige HTTPS (ou `localhost`) : sur `file://` la page fonctionne
 mais sans mode hors-ligne.
