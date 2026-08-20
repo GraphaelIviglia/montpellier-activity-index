@@ -243,6 +243,26 @@
     color: var(--ink-2);
   }
 
+  /* ---------- alerte de stockage ---------- */
+  .alert {
+    border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+    border-left-width: 4px;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 13px 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .alert strong { color: var(--warn); display: block; margin-bottom: 3px; font-size: 14.5px; }
+
+  .storage-state {
+    margin: 12px 0 0;
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+  }
+  .storage-state .ok { color: var(--good); }
+  .storage-state .ko { color: var(--warn); }
+
   /* ---------- onglets ---------- */
   .tabs { display: flex; gap: 6px; padding: 0 2px; }
   .tab {
@@ -560,6 +580,8 @@
     <h1>Chez nous</h1>
   </div>
 
+  <div class="alert hidden" id="storage-alert" role="alert"></div>
+
   <div class="switcher" id="switcher" role="group" aria-label="Qui tient le carnet"></div>
 
   <div class="tabs hidden" id="tabs" role="tablist" aria-label="Domaine"></div>
@@ -759,6 +781,7 @@
         <button class="btn ghost small" type="button" id="btn-import">Importer</button>
         <button class="btn ghost small" type="button" id="btn-reset">Tout effacer</button>
       </div>
+      <p class="storage-state" id="storage-state"></p>
       <textarea id="data-box" spellcheck="false" aria-label="Données au format JSON"></textarea>
       <p class="err" id="tool-msg" role="status"></p>
     </details>
@@ -1092,17 +1115,45 @@
       }
     }
     try {
-      var who = window.localStorage.getItem(ME_KEY);
+      var who = window.localStorage.getItem(ME_KEY) ||
+                window.localStorage.getItem("carnet-de-bebe/moi");
       if (who && db.users.indexOf(who) >= 0) me = who;
     } catch (e) {}
   }
 
+  var lastSavedAt = null;
+
+  /* Writing is not proof: some browsers accept setItem and drop it. Read the
+     key back, so the banner tells the truth rather than what we hoped. */
   function save() {
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(db));
+      var payload = JSON.stringify(db);
+      window.localStorage.setItem(KEY, payload);
+      memoryOnly = window.localStorage.getItem(KEY) !== payload;
+      if (!memoryOnly) lastSavedAt = new Date();
     } catch (e) {
       memoryOnly = true;
     }
+    renderStorageAlert();
+  }
+
+  function renderStorageAlert() {
+    var st = $("storage-state");
+    if (st) {
+      st.innerHTML = memoryOnly
+        ? '<span class="ko">Enregistrement impossible sur cet appareil.</span>'
+        : '<span class="ok">Enregistré sur cet appareil</span>' +
+          (lastSavedAt ? " · dernier à " + fmtTime.format(lastSavedAt) : "") +
+          " · les données ne quittent pas ce navigateur.";
+    }
+    var el = $("storage-alert");
+    show(el, memoryOnly);
+    if (!memoryOnly) return;
+    el.innerHTML = "<strong>Rien ne peut être enregistré sur cet appareil.</strong>" +
+      "Ce que tu notes s’affiche, mais disparaîtra en fermant la page. " +
+      "C’est le cas en navigation privée, quand les cookies et données de sites sont bloqués, " +
+      "ou si la page est ouverte à l’intérieur d’une autre application. " +
+      "Ouvre-la directement dans le navigateur, sur son adresse à elle.";
   }
 
   function setMe(name) {
@@ -1681,6 +1732,7 @@
   /* ================= rendering ================= */
 
   function render() {
+    renderStorageAlert();
     renderSwitcher();
 
     /* Nothing is shown before we know who is holding the phone: every entry
@@ -1833,10 +1885,6 @@
 
     /* contextual note */
     var note = "";
-    if (memoryOnly) {
-      note = "Ce navigateur refuse d’enregistrer les données (navigation privée ?). " +
-        "Les pesées restent affichées mais disparaîtront en fermant l’onglet — copie-les depuis « Réglages et données ».";
-    } else
     if (p.birthWeight && last.days <= 21 && last.kg < p.birthWeight) {
       var pctLost = (p.birthWeight - last.kg) / p.birthWeight * 100;
       note = "Le poids de naissance n’est pas encore repris (−" + nf(pctLost, 1) +
