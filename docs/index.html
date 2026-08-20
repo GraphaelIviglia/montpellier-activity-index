@@ -256,6 +256,8 @@
     color: var(--ink-2);
   }
   .alert strong { color: var(--warn); display: block; margin-bottom: 3px; font-size: 14.5px; }
+  .alert.info { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+  .alert.info strong { color: var(--accent-ink); }
 
   .storage-state {
     margin: 12px 0 0;
@@ -582,6 +584,7 @@
   </div>
 
   <div class="alert hidden" id="storage-alert" role="alert"></div>
+  <div class="alert info hidden" id="share-alert" role="status"></div>
 
   <div class="switcher" id="switcher" role="group" aria-label="Qui tient le carnet"></div>
 
@@ -2370,7 +2373,34 @@
     enqueue({ kind: "state", data: { baby: db.baby, users: db.users, tasks: db.tasks } });
   }
 
+  /* Not-shared and cannot-reach are both states the household needs to see
+     immediately: a carnet that quietly stops travelling between phones looks
+     exactly like one that works. */
+  function renderShareAlert() {
+    var el = $("share-alert");
+    if (!SHARED) {
+      el.className = "alert info";
+      el.innerHTML = "<strong>Ce carnet n’est pas encore partagé.</strong>" +
+        "Chaque téléphone garde le sien : ce que l’un note, l’autre ne le voit pas. " +
+        "Il manque l’adresse du projet Supabase et sa clé « anon public » dans <code>config.js</code>.";
+      show(el, true);
+      return;
+    }
+    if (syncState.error) {
+      el.className = "alert";
+      el.innerHTML = "<strong>Le carnet ne rejoint pas l’autre téléphone.</strong>" +
+        (queue.length ? queue.length + " geste" + (queue.length > 1 ? "s" : "") +
+          " attend" + (queue.length > 1 ? "ent" : "") + " d’être envoyé" + (queue.length > 1 ? "s" : "") + ". " : "") +
+        "Rien n’est perdu : tout repart dès que la liaison revient. " +
+        "Détail : " + esc(String(syncState.error).slice(0, 120));
+      show(el, true);
+      return;
+    }
+    show(el, false);
+  }
+
   function renderSync() {
+    renderShareAlert();
     var el = $("sync-state");
     if (!el) return;
     if (!SHARED) {
