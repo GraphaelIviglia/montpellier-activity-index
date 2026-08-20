@@ -1,7 +1,7 @@
 {
-  "name": "Carnet de bébé",
-  "short_name": "Bébé",
-  "description": "Carnet partagé d'un bébé : couches, vitamines, pesées et courbe OMS, chaque geste signé par qui l'a fait.",
+  "name": "Chez nous",
+  "short_name": "Chez nous",
+  "description": "Ce qui tourne à la maison : les soins de Sacha, l'entretien du logement, et qui a fait quoi.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": ".",

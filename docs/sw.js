@@ -1,11 +1,11 @@
-/* Carnet de bébé — service worker.
+/* Chez nous — service worker.
  *
  * The app is a handful of static files and stores everything in localStorage,
  * so caching the shell is enough to make it work with no network at all.
  * Bump CACHE when any of those files change: the old cache is then dropped.
  */
 
-var CACHE = "carnet-de-bebe-v6";
+var CACHE = "chez-nous-v7";
 
 var SHELL = [
   ".",

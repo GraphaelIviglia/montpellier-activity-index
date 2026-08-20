@@ -1,13 +1,13 @@
-<title>Carnet de bébé</title>
+<title>Chez nous</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="description" content="Suivi d'un bebe : couches, pesees, courbe OMS et rythme de prise en g/jour." />
+<meta name="description" content="Ce qui tourne a la maison : les soins de Sacha, l'entretien du logement, et qui a fait quoi." />
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#141c1a" media="(prefers-color-scheme: dark)" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Bébé" />
+<meta name="apple-mobile-web-app-title" content="Chez nous" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon-192.png" />
 <style>
@@ -242,6 +242,30 @@
     font-size: 13.5px;
     color: var(--ink-2);
   }
+
+  /* ---------- onglets ---------- */
+  .tabs { display: flex; gap: 6px; padding: 0 2px; }
+  .tab {
+    flex: 1 1 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    font-family: var(--sans); font-size: 15.5px; font-weight: 620;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tab .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 19px; height: 19px; padding: 0 5px;
+    border-radius: 999px;
+    background: var(--warn); color: var(--surface);
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+  }
+  .tab[aria-selected="true"] .badge { background: var(--on-accent); color: var(--accent); }
 
   /* ---------- soins ---------- */
   .tasks { display: flex; flex-direction: column; gap: 8px; }
@@ -533,10 +557,12 @@
 <div class="wrap">
 
   <div class="masthead">
-    <h1>Carnet de bébé</h1>
+    <h1>Chez nous</h1>
   </div>
 
   <div class="switcher" id="switcher" role="group" aria-label="Qui tient le carnet"></div>
+
+  <div class="tabs hidden" id="tabs" role="tablist" aria-label="Domaine"></div>
 
   <!-- ============ QUI ES-TU ============ -->
   <section class="card who hidden" id="who-card">
@@ -623,7 +649,7 @@
 
   <!-- ============ SOINS ============ -->
   <section class="card hidden" id="care-card">
-    <h2>Soins</h2>
+    <h2 id="care-title">Soins</h2>
     <div class="tasks" id="task-list"></div>
 
     <details class="tools" id="care-tools">
@@ -749,7 +775,7 @@
     </div>
   </section>
 
-  <footer>
+  <footer id="footer-baby">
     <strong>Repère, pas diagnostic.</strong> Les courbes affichées sont les standards
     de croissance de l’OMS (poids-pour-âge, valeurs arrondies à 100&nbsp;g) et le percentile
     est une estimation. Un poids qui sort de la zone P3–P97, une cassure de la courbe ou
@@ -892,14 +918,18 @@
   }
   function signed(g) { return (g > 0 ? "+" : g < 0 ? "−" : "") + nf(Math.abs(Math.round(g)), 0); }
 
-  /* "il y a 2 h 10" — the phrasing a parent actually wants at 3am. */
-  function sinceLabel(minutes) {
-    if (minutes < 1) return "à l’instant";
-    if (minutes < 60) return "il y a " + minutes + " min";
+  /* One formatter, read forwards ("dans 3 jours") and backwards ("il y a 2 h 10"). */
+  function durationLabel(minutes) {
+    if (minutes < 1) return "moins d’1 min";
+    if (minutes < 60) return minutes + " min";
     var h = Math.floor(minutes / 60), m = minutes % 60;
-    if (h < 24) return "il y a " + h + " h" + (m ? " " + pad2(m) : "");
-    var d = Math.floor(h / 24);
-    return "il y a " + d + (d > 1 ? " jours" : " jour");
+    if (h < 24) return h + " h" + (m ? " " + pad2(m) : "");
+    var d = Math.round(h / 24);
+    return d + (d > 1 ? " jours" : " jour");
+  }
+
+  function sinceLabel(minutes) {
+    return minutes < 1 ? "à l’instant" : "il y a " + durationLabel(minutes);
   }
 
   var TYPES = {
@@ -931,9 +961,9 @@
 
   /* ================= state ================= */
 
-  var KEY = "carnet-de-bebe/v4";
-  var OLD_KEYS = ["carnet-de-bebe/v3", "carnet-de-bebe/v2", "carnet-de-poids/v1"];
-  var ME_KEY = "carnet-de-bebe/moi";
+  var KEY = "chez-nous/v5";
+  var OLD_KEYS = ["carnet-de-bebe/v4", "carnet-de-bebe/v3", "carnet-de-bebe/v2", "carnet-de-poids/v1"];
+  var ME_KEY = "chez-nous/moi";
   var memoryOnly = false;
 
   /* One baby, shared. Two people look after them, so every entry carries the
@@ -944,11 +974,19 @@
     { key: "both", label: "Les deux" }
   ];
 
+  /* Two domains under one roof: what the baby needs, and what the flat needs. */
+  var TABS = [
+    { id: "sacha",  label: "Sacha" },
+    { id: "maison", label: "Maison" }
+  ];
+
   function seedTasks() {
     return [
-      { id: "couche",    name: "Couche",    freq: null,            variants: COUCHE_VARIANTS },
-      { id: "vitamines", name: "Vitamines", freq: { perDay: 1 },   variants: null },
-      { id: "bain",      name: "Bain",      freq: { everyH: 48 },  variants: null }
+      { id: "couche",    scope: "sacha",  name: "Couche",    freq: null,           variants: COUCHE_VARIANTS },
+      { id: "vitamines", scope: "sacha",  name: "Vitamines", freq: { perDay: 1 },  variants: null },
+      { id: "bain",      scope: "sacha",  name: "Bain",      freq: { everyH: 48 }, variants: null },
+      { id: "cafe",      scope: "maison", name: "Entretien machine à café",
+        freq: { everyH: 1080 }, variants: null }
     ];
   }
 
@@ -1037,7 +1075,16 @@
       if (adopted) {
         db.baby = adopted;
         if (parsed && Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
-        if (parsed && Array.isArray(parsed.tasks) && parsed.tasks.length) db.tasks = parsed.tasks;
+        if (parsed && Array.isArray(parsed.tasks) && parsed.tasks.length) {
+          db.tasks = parsed.tasks.map(function (t) {
+            if (!t.scope) t.scope = "sacha";
+            return t;
+          });
+          /* A carnet saved before the Maison tab has no household task yet. */
+          if (!db.tasks.filter(function (t) { return t.scope === "maison"; }).length) {
+            db.tasks = db.tasks.concat(seedTasks().filter(function (t) { return t.scope === "maison"; }));
+          }
+        }
         db.events = parsed && Array.isArray(parsed.events)
           ? parsed.events
           : eventsFromLegacy(adopt.source);
@@ -1276,6 +1323,38 @@
     render();
   });
 
+  /* ---------- onglets ---------- */
+
+  var tab = "sacha";
+
+  function scopeTasks(scope) {
+    return db.tasks.filter(function (t) { return (t.scope || "sacha") === scope; });
+  }
+
+  function lateCount(scope) {
+    return scopeTasks(scope).filter(function (t) {
+      return t.freq && t.freq.everyH && taskStatus(t).state === "due";
+    }).length;
+  }
+
+  function renderTabs() {
+    $("tabs").innerHTML = TABS.map(function (t) {
+      var late = lateCount(t.id);
+      return '<button class="tab" type="button" role="tab" data-tab="' + t.id + '"' +
+        ' aria-selected="' + (t.id === tab ? "true" : "false") + '">' + esc(t.label) +
+        (late ? '<span class="badge" aria-label="' + late + ' en retard">' + late + "</span>" : "") +
+        "</button>";
+    }).join("");
+  }
+
+  $("tabs").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-tab]");
+    if (!btn) return;
+    tab = btn.getAttribute("data-tab");
+    logFilter = "";
+    render();
+  });
+
   /* ---------- soins : des tâches, pas des cartes figées ---------- */
 
   var fmtTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -1303,7 +1382,12 @@
     { key: "h6",   label: "Toutes les 6 h",   freq: { everyH: 6 } },
     { key: "h12",  label: "Toutes les 12 h",  freq: { everyH: 12 } },
     { key: "h48",  label: "Tous les 2 jours", freq: { everyH: 48 } },
-    { key: "h168", label: "1 × par semaine",  freq: { everyH: 168 } }
+    { key: "h168", label: "1 × par semaine",  freq: { everyH: 168 } },
+    { key: "h336", label: "Tous les 15 jours", freq: { everyH: 336 } },
+    { key: "h720", label: "1 × par mois",      freq: { everyH: 720 } },
+    { key: "h1080", label: "Tous les 45 jours", freq: { everyH: 1080 } },
+    { key: "h2160", label: "Tous les 3 mois",  freq: { everyH: 2160 } },
+    { key: "h4320", label: "Tous les 6 mois",  freq: { everyH: 4320 } }
   ];
 
   function sameFreq(a, b) {
@@ -1347,13 +1431,15 @@
       state = doneToday >= t.freq.perDay ? "ok" : "due";
       chip = doneToday + " / " + t.freq.perDay + " aujourd’hui";
     } else if (t.freq && t.freq.everyH) {
-      if (!last) { state = "due"; chip = "à faire"; }
+      if (!last) { state = "due"; chip = "jamais fait"; }
       else {
         var due = parseLocal(last.at).getTime() + t.freq.everyH * 3600000;
+        var gap = Math.floor(Math.abs(now.getTime() - due) / 60000);
         state = now.getTime() >= due ? "due" : "ok";
+        /* Late is the case that matters: say by how much, not just "à faire". */
         chip = state === "due"
-          ? "à faire"
-          : "dans " + sinceLabel(Math.floor((due - now.getTime()) / 60000)).replace("il y a ", "");
+          ? (gap < 60 ? "à faire" : "en retard de " + durationLabel(gap))
+          : "dans " + durationLabel(gap);
       }
     }
 
@@ -1364,7 +1450,7 @@
         (w ? " · " + w : "") +
         (last.variant ? " · " + variantLabel(t, last.variant).toLowerCase() : "");
     } else {
-      when = "jamais noté";
+      when = freqText(t.freq) || "jamais noté";
     }
 
     return { state: state, chip: chip, when: when, last: last, doneToday: doneToday };
@@ -1390,6 +1476,7 @@
     });
     save();
     renderCare();
+    renderTabs();
     renderLog();
     toast(t.name + (variant ? " · " + variantLabel(t, variant).toLowerCase() : "") +
       " · noté à " + fmtTime.format(parseLocal(at)) + ".");
@@ -1402,7 +1489,7 @@
       open[v.getAttribute("data-for")] = true;
     });
 
-    $("task-list").innerHTML = db.tasks.map(function (t) {
+    $("task-list").innerHTML = scopeTasks(tab).map(function (t) {
       var st = taskStatus(t);
       var row = '<button class="task" type="button" data-task="' + esc(t.id) + '">' +
         '<span class="t-main"><span class="t-name">' + esc(t.name) + "</span>" +
@@ -1443,6 +1530,13 @@
 
   /* ---------- gérer les tâches ---------- */
 
+  function freqText(f) {
+    for (var i = 0; i < FREQS.length; i++) {
+      if (FREQS[i].freq && sameFreq(FREQS[i].freq, f)) return FREQS[i].label.toLowerCase();
+    }
+    return null;
+  }
+
   function freqOptions(selected) {
     return FREQS.map(function (f) {
       return '<option value="' + f.key + '"' + (f.key === selected ? " selected" : "") +
@@ -1452,7 +1546,7 @@
 
   function renderTaskAdmin() {
     if (!$("t-freq").options.length) $("t-freq").innerHTML = freqOptions("");
-    $("task-admin").innerHTML = db.tasks.map(function (t) {
+    $("task-admin").innerHTML = scopeTasks(tab).map(function (t) {
       return '<div class="admin-row">' +
         '<span class="a-name">' + esc(t.name) + "</span>" +
         '<select data-task="' + esc(t.id) + '" aria-label="Fréquence de ' + esc(t.name) + '">' +
@@ -1471,6 +1565,7 @@
     t.freq = freqFromKey(sel.value);
     save();
     renderCare();
+    renderTabs();
   });
 
   $("task-admin").addEventListener("click", function (ev) {
@@ -1485,7 +1580,7 @@
     db.events = db.events.filter(function (e) { return e.taskId !== t.id; });
     if (logFilter === t.id) logFilter = "";
     save();
-    renderCare(); renderTaskAdmin(); renderLog();
+    renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
   });
 
   $("task-form").addEventListener("submit", function (ev) {
@@ -1493,20 +1588,22 @@
     var name = $("t-name").value.trim();
     var err = $("task-err");
     if (!name) { err.textContent = "Donne un nom à la tâche."; return; }
-    for (var i = 0; i < db.tasks.length; i++) {
-      if (db.tasks[i].name.toLowerCase() === name.toLowerCase()) {
-        err.textContent = "Cette tâche existe déjà.";
+    var here = scopeTasks(tab);
+    for (var i = 0; i < here.length; i++) {
+      if (here[i].name.toLowerCase() === name.toLowerCase()) {
+        err.textContent = "Cette tâche existe déjà dans cet onglet.";
         return;
       }
     }
     err.textContent = "";
     db.tasks.push({
       id: "t" + Math.round(Math.random() * 1e9).toString(36) + db.tasks.length,
-      name: name, freq: freqFromKey($("t-freq").value), variants: null
+      scope: tab, name: name,
+      freq: freqFromKey($("t-freq").value), variants: null
     });
     save();
     $("t-name").value = "";
-    renderCare(); renderTaskAdmin(); renderLog();
+    renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
     toast("Tâche « " + name + " » ajoutée.");
   });
 
@@ -1527,19 +1624,22 @@
     var id = btn.getAttribute("data-dele");
     db.events = db.events.filter(function (e) { return e.id !== id; });
     save();
-    renderCare(); renderLog();
+    renderCare(); renderTabs(); renderLog();
   });
 
   function renderLog() {
     $("log-filter").innerHTML =
       '<button type="button" data-filter="" aria-pressed="' + (logFilter ? "false" : "true") + '">Tout</button>' +
-      db.tasks.map(function (t) {
+      scopeTasks(tab).map(function (t) {
         return '<button type="button" data-filter="' + esc(t.id) + '" aria-pressed="' +
           (logFilter === t.id ? "true" : "false") + '">' + esc(t.name) + "</button>";
       }).join("");
 
+    var inTab = {};
+    scopeTasks(tab).forEach(function (t) { inTab[t.id] = true; });
+
     var all = newestFirst(db.events).filter(function (e) {
-      return !logFilter || e.taskId === logFilter;
+      return inTab[e.taskId] && (!logFilter || e.taskId === logFilter);
     });
 
     var todayISO = toISO(new Date());
@@ -1588,16 +1688,29 @@
     var known = !!me;
     var hasProfile = known && !!A().birthDate;
 
+    var baby = tab === "sacha";
+    show($("tabs"), known);
     show($("who-card"), !known);
-    show(setupCard, known && !hasProfile);
-    show(heroCard, hasProfile);
-    show($("care-card"), hasProfile);
-    show($("log-card"), hasProfile);
-    show(chartCard, hasProfile);
-    show(addCard, hasProfile);
-    show(histCard, hasProfile);
+    show(setupCard, known && baby && !hasProfile);
+    show(heroCard, hasProfile && baby);
+    show($("care-card"), known && (baby ? hasProfile : true));
+    show($("log-card"), known && (baby ? hasProfile : true));
+    show(chartCard, hasProfile && baby);
+    show(addCard, hasProfile && baby);
+    show(histCard, hasProfile && baby);
     if (!known) {
       show($("install-card"), false);
+      return;
+    }
+    renderTabs();
+    $("care-title").textContent = baby ? "Soins" : "Entretien";
+    show($("footer-baby"), baby);
+
+    /* The Maison tab has no baby to set up: its tasks stand on their own. */
+    if (!baby) {
+      renderCare();
+      renderTaskAdmin();
+      renderLog();
       return;
     }
 
@@ -2042,9 +2155,13 @@
   }
 
   /* The elapsed time is the whole point of the line — keep it honest. */
-  window.setInterval(function () { if (me && A().birthDate) renderCare(); }, 60000);
+  window.setInterval(function () {
+    if (!me) return;
+    renderCare();
+    renderTabs();
+  }, 60000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && me && A().birthDate) renderCare();
+    if (!document.hidden && me) { renderCare(); renderTabs(); }
   });
 
   /* ================= boot ================= */
