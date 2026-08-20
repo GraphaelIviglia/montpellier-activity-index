@@ -5,11 +5,12 @@
  * Bump CACHE when any of those files change: the old cache is then dropped.
  */
 
-var CACHE = "chez-nous-v8";
+var CACHE = "chez-nous-v9";
 
 var SHELL = [
   ".",
   "index.html",
+  "config.js",
   "manifest.webmanifest",
   "icon-192.png",
   "icon-512.png",

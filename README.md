@@ -52,9 +52,32 @@ le prénom, l'heure. Filtrable par tâche, chaque ligne supprimable.
   repère de l'âge, percentile estimé ;
 - historique signé, export/import des données en JSON.
 
-Les données sont stockées dans le `localStorage` du navigateur : rien ne transite
-par le serveur. Si le navigateur refuse le stockage (navigation privée), l'app le
-dit au lieu de perdre les données en silence.
+### Partage entre les deux téléphones
+
+Sans configuration, chaque appareil garde son propre carnet et l'app le dit.
+Pour que Fleur et Raph voient la même chose :
+
+1. créer un projet Supabase, puis y coller [`docs/supabase.sql`](docs/supabase.sql)
+   dans *SQL Editor* — deux tables et leurs règles d'accès ;
+2. reporter *Project URL* et la clé *anon public* dans
+   [`docs/config.js`](docs/config.js).
+
+Le partage repose sur deux stockages, choisis pour la façon dont ils se heurtent.
+`chez_nous_state` tient un document par foyer — bébé, pesées, tâches — qui change
+rarement, où le dernier qui écrit gagne. `chez_nous_events` reçoit une ligne par
+geste, jamais modifiée : deux téléphones qui notent à la même seconde ne se
+marchent pas dessus, chaque ligne portant son identifiant.
+
+Tout est aussi gardé en local : l'app s'ouvre instantanément, fonctionne sans
+réseau, et ce qui a été noté hors ligne part dès le retour du réseau. Le compte
+des gestes en attente s'affiche dans « Réglages et données ».
+
+La clé *anon public* voyage dans la page : la protection du carnet tient donc au
+secret de son adresse. Pour verrouiller réellement, il faudrait Supabase Auth et
+une vraie connexion.
+
+Le prénom actif reste local à chaque appareil : c'est une propriété du téléphone,
+pas du carnet.
 
 ### Installation sur l'écran d'accueil
 
