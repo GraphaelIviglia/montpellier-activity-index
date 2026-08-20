@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Chez nous" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon-192.png" />
+<script src="config.js"></script>
 <style>
   :root {
     color-scheme: light;
@@ -782,6 +783,7 @@
         <button class="btn ghost small" type="button" id="btn-reset">Tout effacer</button>
       </div>
       <p class="storage-state" id="storage-state"></p>
+      <p class="storage-state" id="sync-state"></p>
       <textarea id="data-box" spellcheck="false" aria-label="Données au format JSON"></textarea>
       <p class="err" id="tool-msg" role="status"></p>
     </details>
@@ -1125,7 +1127,7 @@
 
   /* Writing is not proof: some browsers accept setItem and drop it. Read the
      key back, so the banner tells the truth rather than what we hoped. */
-  function save() {
+  function saveLocal() {
     try {
       var payload = JSON.stringify(db);
       window.localStorage.setItem(KEY, payload);
@@ -1135,6 +1137,12 @@
       memoryOnly = true;
     }
     renderStorageAlert();
+  }
+
+  /* Everything that is not an event travels as one document. */
+  function save() {
+    saveLocal();
+    pushState();
   }
 
   function renderStorageAlert() {
@@ -1525,7 +1533,11 @@
       id: "e" + at + "-" + db.events.length,
       taskId: taskId, at: at, by: stamp(), variant: variant || null
     });
-    save();
+    saveLocal();
+    enqueue({ kind: "event", row: {
+      id: db.events[db.events.length - 1].id, household: FOYER,
+      task_id: taskId, at: at, by_name: stamp(), variant: variant || null
+    } });
     renderCare();
     renderTabs();
     renderLog();
@@ -1631,6 +1643,7 @@
     db.events = db.events.filter(function (e) { return e.taskId !== t.id; });
     if (logFilter === t.id) logFilter = "";
     save();
+    enqueue({ kind: "untask", id: t.id });
     renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
   });
 
@@ -1674,7 +1687,8 @@
     if (!btn) return;
     var id = btn.getAttribute("data-dele");
     db.events = db.events.filter(function (e) { return e.id !== id; });
-    save();
+    saveLocal();
+    enqueue({ kind: "unevent", id: id });
     renderCare(); renderTabs(); renderLog();
   });
 
@@ -1733,6 +1747,7 @@
 
   function render() {
     renderStorageAlert();
+    renderSync();
     renderSwitcher();
 
     /* Nothing is shown before we know who is holding the phone: every entry
@@ -2212,10 +2227,185 @@
     if (!document.hidden && me) { renderCare(); renderTabs(); }
   });
 
+  /* ================= partage entre appareils ================= */
+
+  /* Two stores, chosen for how they conflict:
+     - `state` is one document (bébé, pesées, tâches, prénoms). It changes
+       rarely, so last-write-wins is honest there.
+     - `events` is append-only, one row per geste. Two phones noting something
+       at the same second never collide, because each row carries its own id.
+     Everything is mirrored in localStorage, so the app opens instantly and
+     keeps working with no network; the queue below replays what was missed. */
+
+  var CFG = window.CHEZ_NOUS || {};
+  var FOYER = CFG.FOYER || "foyer";
+  var SHARED = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+  var QUEUE_KEY = KEY + "/queue";
+  var T_STATE = "chez_nous_state";
+  var T_EVENTS = "chez_nous_events";
+
+  var syncState = { at: null, error: null, busy: false };
+  var queue = [];
+
+  function loadQueue() {
+    try { queue = JSON.parse(window.localStorage.getItem(QUEUE_KEY)) || []; } catch (e) { queue = []; }
+    if (!Array.isArray(queue)) queue = [];
+  }
+  function saveQueue() {
+    try { window.localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch (e) {}
+  }
+
+  function rest(path, opts) {
+    var o = opts || {};
+    return fetch(CFG.SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/" + path, {
+      method: o.method || "GET",
+      headers: {
+        apikey: CFG.SUPABASE_ANON_KEY,
+        Authorization: "Bearer " + CFG.SUPABASE_ANON_KEY,
+        "Content-Type": "application/json",
+        Prefer: o.prefer || "return=minimal"
+      },
+      body: o.body ? JSON.stringify(o.body) : undefined
+    }).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + " " + t.slice(0, 180)); });
+      return o.method && o.method !== "GET" ? null : r.json();
+    });
+  }
+
+  var q = encodeURIComponent;
+
+  /* One queued operation = one REST call. Ids are generated on the phone, so
+     replaying an operation twice is harmless. */
+  function runOp(op) {
+    if (op.kind === "event") {
+      return rest(T_EVENTS + "?on_conflict=id", {
+        method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: [op.row]
+      });
+    }
+    if (op.kind === "unevent") {
+      return rest(T_EVENTS + "?id=eq." + q(op.id) + "&household=eq." + q(FOYER), { method: "DELETE" });
+    }
+    if (op.kind === "untask") {
+      return rest(T_EVENTS + "?task_id=eq." + q(op.id) + "&household=eq." + q(FOYER), { method: "DELETE" });
+    }
+    if (op.kind === "state") {
+      return rest(T_STATE + "?on_conflict=household", {
+        method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
+        body: [{ household: FOYER, data: op.data, updated_at: new Date().toISOString() }]
+      });
+    }
+    return Promise.resolve();
+  }
+
+  function enqueue(op) {
+    if (!SHARED) return;
+    queue.push(op);
+    saveQueue();
+    flush();
+  }
+
+  var flushing = false;
+  function flush() {
+    if (!SHARED || flushing || !queue.length) return Promise.resolve();
+    flushing = true;
+    var op = queue[0];
+    return runOp(op).then(function () {
+      queue.shift();
+      saveQueue();
+      syncState.error = null;
+      flushing = false;
+      if (queue.length) return flush();
+      renderSync();
+    }).catch(function (e) {
+      /* Keep the operation: the phone is offline, or the table is missing. */
+      syncState.error = e.message;
+      flushing = false;
+      renderSync();
+    });
+  }
+
+  function pull() {
+    if (!SHARED || syncState.busy) return Promise.resolve();
+    syncState.busy = true;
+    return Promise.all([
+      rest(T_STATE + "?household=eq." + q(FOYER) + "&select=data"),
+      rest(T_EVENTS + "?household=eq." + q(FOYER) + "&select=id,task_id,at,by_name,variant")
+    ]).then(function (res) {
+      var doc = res[0] && res[0][0] && res[0][0].data;
+      if (doc) {
+        if (doc.baby) db.baby = normalise(doc.baby);
+        if (Array.isArray(doc.users) && doc.users.length === 2) db.users = doc.users;
+        if (Array.isArray(doc.tasks) && doc.tasks.length) {
+          db.tasks = doc.tasks.map(function (t) { if (!t.scope) t.scope = "sacha"; return t; });
+        }
+      }
+      db.events = (res[1] || []).map(function (r) {
+        return { id: r.id, taskId: r.task_id, at: r.at, by: r.by_name, variant: r.variant };
+      });
+      /* Anything still queued has not reached the server: keep showing it. */
+      queue.forEach(function (op) {
+        if (op.kind === "event" && !db.events.filter(function (e) { return e.id === op.row.id; }).length) {
+          db.events.push({ id: op.row.id, taskId: op.row.task_id, at: op.row.at, by: op.row.by_name, variant: op.row.variant });
+        }
+        if (op.kind === "unevent") {
+          db.events = db.events.filter(function (e) { return e.id !== op.id; });
+        }
+        if (op.kind === "untask") {
+          db.events = db.events.filter(function (e) { return e.taskId !== op.id; });
+        }
+      });
+      saveLocal();
+      syncState.at = new Date();
+      syncState.error = null;
+      syncState.busy = false;
+      render();
+    }).catch(function (e) {
+      syncState.error = e.message;
+      syncState.busy = false;
+      renderSync();
+    });
+  }
+
+  function pushState() {
+    enqueue({ kind: "state", data: { baby: db.baby, users: db.users, tasks: db.tasks } });
+  }
+
+  function renderSync() {
+    var el = $("sync-state");
+    if (!el) return;
+    if (!SHARED) {
+      el.innerHTML = '<span class="ko">Carnet local</span> · non partagé entre vos téléphones ' +
+        "· renseigne Supabase dans config.js";
+      return;
+    }
+    var pend = queue.length;
+    if (syncState.error) {
+      el.innerHTML = '<span class="ko">Pas de liaison</span>' +
+        (pend ? " · " + pend + " geste" + (pend > 1 ? "s" : "") + " en attente d’envoi" : "") +
+        " · " + esc(String(syncState.error).slice(0, 90));
+      return;
+    }
+    el.innerHTML = '<span class="ok">Partagé</span>' +
+      (syncState.at ? " · à jour à " + fmtTime.format(syncState.at) : " · première synchronisation…") +
+      (pend ? " · " + pend + " en attente" : "");
+  }
+
+  function startSync() {
+    loadQueue();
+    if (!SHARED) { renderSync(); return; }
+    pull();
+    window.setInterval(function () { if (!document.hidden) { flush(); pull(); } }, 20000);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) { flush(); pull(); }
+    });
+    window.addEventListener("online", function () { flush(); pull(); });
+  }
+
   /* ================= boot ================= */
   memoryOnly = !storageWorks();
   load();
   render();
+  startSync();
   if (me) setupInstallCard();
 })();
 </script>
