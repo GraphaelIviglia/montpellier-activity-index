@@ -1,13 +1,13 @@
-<title>Carnet de bébé</title>
+<title>Chez nous</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="description" content="Suivi d'un bebe : couches, pesees, courbe OMS et rythme de prise en g/jour." />
+<meta name="description" content="Ce qui tourne a la maison : les soins de Sacha, l'entretien du logement, et qui a fait quoi." />
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#141c1a" media="(prefers-color-scheme: dark)" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Bébé" />
+<meta name="apple-mobile-web-app-title" content="Chez nous" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" href="icon-192.png" />
 <style>
@@ -120,6 +120,42 @@
     letter-spacing: .07em;
   }
 
+  /* ---------- switcher ---------- */
+  .switcher { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
+  .sw-btn {
+    font-family: var(--sans); font-size: 15px; font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .sw-btn[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .sw-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sw-btn .sub {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; opacity: .75;
+  }
+  .sw-label {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); align-self: center; margin-right: 2px;
+  }
+
+  /* ---------- qui es-tu ---------- */
+  .who p { margin: 0 0 14px; font-size: 14.5px; color: var(--ink-2); }
+  .who .who-note { margin: 14px 0 0; font-size: 12.5px; color: var(--muted); }
+  .who-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .who-btn { font-size: 17px; padding: 16px 12px; }
+  .who-btn[aria-pressed="true"] { background: var(--accent-ink); }
+
+  .by { color: var(--muted); }
+  .vit-ok { color: var(--good); }
+
   /* ---------- cards ---------- */
   .card {
     background: var(--surface);
@@ -206,6 +242,76 @@
     font-size: 13.5px;
     color: var(--ink-2);
   }
+
+  /* ---------- onglets ---------- */
+  .tabs { display: flex; gap: 6px; padding: 0 2px; }
+  .tab {
+    flex: 1 1 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    font-family: var(--sans); font-size: 15.5px; font-weight: 620;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tab .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 19px; height: 19px; padding: 0 5px;
+    border-radius: 999px;
+    background: var(--warn); color: var(--surface);
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+  }
+  .tab[aria-selected="true"] .badge { background: var(--on-accent); color: var(--accent); }
+
+  /* ---------- soins ---------- */
+  .tasks { display: flex; flex-direction: column; gap: 8px; }
+  .task {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; text-align: left;
+    font-family: var(--sans);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 12px 14px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .task:hover { border-color: var(--accent); background: var(--surface); }
+  .task:active { transform: scale(.995); }
+  .task:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .t-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .t-name { font-size: 16px; font-weight: 620; letter-spacing: -.01em; }
+  .t-when {
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .t-chip {
+    flex: none;
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink-2); white-space: nowrap;
+  }
+  .t-chip.due { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  .t-chip.ok  { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .t-go { flex: none; font-size: 20px; font-weight: 600; color: var(--muted); line-height: 1; }
+  .task:hover .t-go { color: var(--accent); }
+
+  .variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+
+  .admin-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--line-soft);
+  }
+  .admin-row:last-child { border-bottom: 0; }
+  .admin-row .a-name { flex: 1 1 auto; font-size: 14.5px; font-weight: 550; }
+  .admin-row select { flex: 0 1 auto; width: auto; font-size: 14px; padding: 6px 8px; }
+
+  .wrap-seg { flex-wrap: wrap; margin-bottom: 4px; }
 
   /* ---------- couches ---------- */
   .dc-last { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
@@ -451,8 +557,20 @@
 <div class="wrap">
 
   <div class="masthead">
-    <h1>Carnet de bébé</h1>
+    <h1>Chez nous</h1>
   </div>
+
+  <div class="switcher" id="switcher" role="group" aria-label="Qui tient le carnet"></div>
+
+  <div class="tabs hidden" id="tabs" role="tablist" aria-label="Domaine"></div>
+
+  <!-- ============ QUI ES-TU ============ -->
+  <section class="card who hidden" id="who-card">
+    <h2>Qui tient le carnet ?</h2>
+    <p>Chaque pesée, chaque change et chaque vitamine gardera ton prénom&nbsp;: on saura qui a fait quoi, et qui a déjà donné les vitamines aujourd’hui.</p>
+    <div class="who-buttons" id="who-buttons"></div>
+    <p class="who-note">Le choix est retenu sur cet appareil. Il se change en un geste depuis le haut de l’écran.</p>
+  </section>
 
   <!-- ============ SETUP (première visite) ============ -->
   <section class="card" id="setup-card">
@@ -482,6 +600,7 @@
         </div>
       </div>
       <p class="err" id="setup-err" role="alert"></p>
+      <p class="err" id="setup-who" role="status" style="color: var(--muted);"></p>
       <div class="row">
         <button class="btn" type="submit" id="setup-submit">Commencer</button>
         <button class="btn ghost" type="button" id="setup-cancel" hidden>Annuler</button>
@@ -528,66 +647,39 @@
     <div class="note hidden" id="h-note"></div>
   </section>
 
-  <!-- ============ COUCHES ============ -->
-  <section class="card hidden" id="diaper-card">
-    <h2>Couches</h2>
+  <!-- ============ SOINS ============ -->
+  <section class="card hidden" id="care-card">
+    <h2 id="care-title">Soins</h2>
+    <div class="tasks" id="task-list"></div>
 
-    <div class="dc-last">
-      <span class="dc-since" id="dc-since">—</span>
-      <span class="dc-when" id="dc-when"></span>
-    </div>
-
-    <div class="types" id="dc-types" role="group" aria-label="Noter un change">
-      <button class="tbtn" type="button" data-type="pipi">
-        <span class="marks"><i class="mark pipi"></i></span>Pipi
-      </button>
-      <button class="tbtn" type="button" data-type="caca">
-        <span class="marks"><i class="mark caca"></i></span>Caca
-      </button>
-      <button class="tbtn" type="button" data-type="both">
-        <span class="marks"><i class="mark pipi"></i><i class="mark caca"></i></span>Les deux
-      </button>
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="k">Aujourd’hui</div>
-        <div class="v" id="dc-today">—</div>
-        <div class="n" id="dc-today-n"></div>
-      </div>
-      <div class="stat">
-        <div class="k">Moyenne 7 jours</div>
-        <div class="v" id="dc-avg">—</div>
-        <div class="n">repère : 5 à 6 couches mouillées par jour</div>
-      </div>
-    </div>
-
-    <ul class="changes" id="dc-list"></ul>
-    <p class="empty hidden" id="dc-empty">Aucun change noté pour l’instant.</p>
-
-    <details class="tools">
-      <summary>Noter à une autre heure</summary>
-      <form id="dc-form">
+    <details class="tools" id="care-tools">
+      <summary>Gérer les tâches</summary>
+      <div id="task-admin"></div>
+      <form id="task-form">
         <div class="row" style="margin-top: 12px;">
-          <div class="field">
-            <label for="dc-at">Date et heure</label>
-            <input id="dc-at" type="datetime-local" required />
+          <div class="field" style="flex: 2 1 160px;">
+            <label for="t-name">Nouvelle tâche</label>
+            <input id="t-name" type="text" autocomplete="off" placeholder="Bain, biberon, sieste…" />
           </div>
           <div class="field">
-            <label for="dc-type">Contenu</label>
-            <select id="dc-type">
-              <option value="pipi">Pipi</option>
-              <option value="caca">Caca</option>
-              <option value="both">Les deux</option>
-            </select>
+            <label for="t-freq">Fréquence</label>
+            <select id="t-freq"></select>
           </div>
         </div>
-        <p class="err" id="dc-err" role="alert"></p>
+        <p class="err" id="task-err" role="alert"></p>
         <div class="row">
-          <button class="btn small" type="submit">Noter ce change</button>
+          <button class="btn small" type="submit">Ajouter la tâche</button>
         </div>
       </form>
     </details>
+  </section>
+
+  <!-- ============ HISTORIQUE DES SOINS ============ -->
+  <section class="card hidden" id="log-card">
+    <h2>Qui a fait quoi</h2>
+    <div class="seg wrap-seg" id="log-filter" role="group" aria-label="Filtrer l’historique"></div>
+    <ul class="changes" id="log-list"></ul>
+    <p class="empty hidden" id="log-empty">Rien de noté pour l’instant.</p>
   </section>
 
   <!-- ============ ADD ============ -->
@@ -662,7 +754,7 @@
     <details class="tools">
       <summary>Réglages et données</summary>
       <div class="row" style="margin-top: 12px;">
-        <button class="btn ghost small" type="button" id="btn-edit">Modifier le profil</button>
+        <button class="btn ghost small" type="button" id="btn-edit">Modifier le bébé</button>
         <button class="btn ghost small" type="button" id="btn-copy">Copier les données</button>
         <button class="btn ghost small" type="button" id="btn-import">Importer</button>
         <button class="btn ghost small" type="button" id="btn-reset">Tout effacer</button>
@@ -683,7 +775,7 @@
     </div>
   </section>
 
-  <footer>
+  <footer id="footer-baby">
     <strong>Repère, pas diagnostic.</strong> Les courbes affichées sont les standards
     de croissance de l’OMS (poids-pour-âge, valeurs arrondies à 100&nbsp;g) et le percentile
     est une estimation. Un poids qui sort de la zone P3–P97, une cassure de la courbe ou
@@ -826,14 +918,18 @@
   }
   function signed(g) { return (g > 0 ? "+" : g < 0 ? "−" : "") + nf(Math.abs(Math.round(g)), 0); }
 
-  /* "il y a 2 h 10" — the phrasing a parent actually wants at 3am. */
-  function sinceLabel(minutes) {
-    if (minutes < 1) return "à l’instant";
-    if (minutes < 60) return "il y a " + minutes + " min";
+  /* One formatter, read forwards ("dans 3 jours") and backwards ("il y a 2 h 10"). */
+  function durationLabel(minutes) {
+    if (minutes < 1) return "moins d’1 min";
+    if (minutes < 60) return minutes + " min";
     var h = Math.floor(minutes / 60), m = minutes % 60;
-    if (h < 24) return "il y a " + h + " h" + (m ? " " + pad2(m) : "");
-    var d = Math.floor(h / 24);
-    return "il y a " + d + (d > 1 ? " jours" : " jour");
+    if (h < 24) return h + " h" + (m ? " " + pad2(m) : "");
+    var d = Math.round(h / 24);
+    return d + (d > 1 ? " jours" : " jour");
+  }
+
+  function sinceLabel(minutes) {
+    return minutes < 1 ? "à l’instant" : "il y a " + durationLabel(minutes);
   }
 
   var TYPES = {
@@ -865,9 +961,47 @@
 
   /* ================= state ================= */
 
-  var KEY = "carnet-de-poids/v1";
+  var KEY = "chez-nous/v5";
+  var OLD_KEYS = ["carnet-de-bebe/v4", "carnet-de-bebe/v3", "carnet-de-bebe/v2", "carnet-de-poids/v1"];
+  var ME_KEY = "chez-nous/moi";
   var memoryOnly = false;
-  var state = { profile: null, entries: [], changes: [] };
+
+  /* One baby, shared. Two people look after them, so every entry carries the
+     name of whoever recorded it — that is the whole point of the profiles. */
+  var COUCHE_VARIANTS = [
+    { key: "pipi", label: "Pipi" },
+    { key: "caca", label: "Caca" },
+    { key: "both", label: "Les deux" }
+  ];
+
+  /* Two domains under one roof: what the baby needs, and what the flat needs. */
+  var TABS = [
+    { id: "sacha",  label: "Sacha" },
+    { id: "maison", label: "Maison" }
+  ];
+
+  function seedTasks() {
+    return [
+      { id: "couche",    scope: "sacha",  name: "Couche",    freq: null,           variants: COUCHE_VARIANTS },
+      { id: "vitamines", scope: "sacha",  name: "Vitamines", freq: { perDay: 1 },  variants: null },
+      { id: "bain",      scope: "sacha",  name: "Bain",      freq: { everyH: 48 }, variants: null },
+      { id: "cafe",      scope: "maison", name: "Entretien machine à café",
+        freq: { everyH: 1080 }, variants: null }
+    ];
+  }
+
+  var db = {
+    baby: { name: "Sacha", sex: "f", birthDate: null, birthWeight: null, entries: [] },
+    tasks: seedTasks(),
+    events: [],
+    users: ["Fleur", "Raph"]
+  };
+
+  /* Who is holding this phone. Kept under its own key: it is a property of the
+     device, not of the carnet, so importing data never changes who you are. */
+  var me = null;
+
+  function A() { return db.baby; }
 
   function storageWorks() {
     try {
@@ -879,40 +1013,116 @@
     }
   }
 
-  function load() {
-    try {
-      var raw = window.localStorage.getItem(KEY);
-      if (raw) {
-        var parsed = JSON.parse(raw);
-        if (parsed && parsed.profile) state = parsed;
-        if (!Array.isArray(state.entries)) state.entries = [];
-        if (!Array.isArray(state.changes)) state.changes = [];
-      }
-    } catch (e) {
-      memoryOnly = true;
-    }
+  function arr(v) { return Array.isArray(v) ? v : []; }
+
+  function normalise(raw) {
+    var b = raw && typeof raw === "object" ? raw : {};
+    return {
+      name: b.name || "Sacha",
+      sex: b.sex === "m" ? "m" : "f",
+      birthDate: b.birthDate || null,
+      birthWeight: typeof b.birthWeight === "number" ? b.birthWeight : null,
+      entries: arr(b.entries)
+    };
   }
+
+  /* The fixed couche and vitamine lists became ordinary tasks: carry their
+     history over so nothing recorded before is lost. */
+  function eventsFromLegacy(b) {
+    var out = [];
+    arr(b && b.changes).forEach(function (c) {
+      if (c && c.at) out.push({ id: c.id || ("e" + c.at + out.length), taskId: "couche", at: c.at, by: c.by, variant: c.type || null });
+    });
+    arr(b && b.vitamins).forEach(function (v) {
+      if (v && v.at) out.push({ id: v.id || ("e" + v.at + out.length), taskId: "vitamines", at: v.at, by: v.by, variant: null });
+    });
+    return out;
+  }
+
+  /* Earlier versions stored either one profile or a list of children. Both
+     collapse to the single baby this carnet now follows. */
+  function adopt(parsed) {
+    adopt.source = null;
+    if (!parsed || typeof parsed !== "object") return null;
+    if (parsed.baby) { adopt.source = parsed.baby; return normalise(parsed.baby); }
+    if (Array.isArray(parsed.babies) && parsed.babies.length) {
+      var pick = parsed.babies.filter(function (b) { return b && b.birthDate; })[0] || parsed.babies[0];
+      adopt.source = pick;
+      return normalise(pick);
+    }
+    if (parsed.profile) {
+      adopt.source = {
+        name: parsed.profile.name, sex: parsed.profile.sex,
+        birthDate: parsed.profile.birthDate, birthWeight: parsed.profile.birthWeight,
+        entries: parsed.entries, changes: parsed.changes
+      };
+      return normalise(adopt.source);
+    }
+    return null;
+  }
+
+  function load() {
+    var keys = [KEY].concat(OLD_KEYS);
+    for (var i = 0; i < keys.length; i++) {
+      var parsed = null;
+      try {
+        var raw = window.localStorage.getItem(keys[i]);
+        if (raw) parsed = JSON.parse(raw);
+      } catch (e) {
+        memoryOnly = true;
+      }
+      var adopted = adopt(parsed);
+      if (adopted) {
+        db.baby = adopted;
+        if (parsed && Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
+        if (parsed && Array.isArray(parsed.tasks) && parsed.tasks.length) {
+          db.tasks = parsed.tasks.map(function (t) {
+            if (!t.scope) t.scope = "sacha";
+            return t;
+          });
+          /* A carnet saved before the Maison tab has no household task yet. */
+          if (!db.tasks.filter(function (t) { return t.scope === "maison"; }).length) {
+            db.tasks = db.tasks.concat(seedTasks().filter(function (t) { return t.scope === "maison"; }));
+          }
+        }
+        db.events = parsed && Array.isArray(parsed.events)
+          ? parsed.events
+          : eventsFromLegacy(adopt.source);
+        break;
+      }
+    }
+    try {
+      var who = window.localStorage.getItem(ME_KEY);
+      if (who && db.users.indexOf(who) >= 0) me = who;
+    } catch (e) {}
+  }
+
   function save() {
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(state));
+      window.localStorage.setItem(KEY, JSON.stringify(db));
     } catch (e) {
       memoryOnly = true;
     }
   }
 
+  function setMe(name) {
+    me = name;
+    try { window.localStorage.setItem(ME_KEY, name); } catch (e) {}
+  }
+
   /* Measurements sorted by date, birth weight always first. */
   function series() {
-    var out = state.entries.slice();
-    if (state.profile && state.profile.birthWeight) {
-      out.push({ id: "birth", date: state.profile.birthDate, kg: state.profile.birthWeight, birth: true });
+    var out = A().entries.slice();
+    if (A().birthWeight) {
+      out.push({ id: "birth", date: A().birthDate, kg: A().birthWeight, birth: true });
     }
     out.sort(function (a, b) {
       if (a.date === b.date) return a.birth ? -1 : b.birth ? 1 : 0;
       return a.date < b.date ? -1 : 1;
     });
     return out.map(function (e) {
-      var d = daysBetween(state.profile.birthDate, e.date);
-      return { id: e.id, date: e.date, kg: e.kg, birth: !!e.birth, days: d, months: d / DAYS_PER_MONTH };
+      var d = daysBetween(A().birthDate, e.date);
+      return { id: e.id, date: e.date, kg: e.kg, by: e.by, birth: !!e.birth, days: d, months: d / DAYS_PER_MONTH };
     });
   }
 
@@ -936,7 +1146,47 @@
 
   function show(el, on) { el.classList.toggle("hidden", !on); }
 
-  /* ---------- setup ---------- */
+  /* ---------- qui utilise le carnet ---------- */
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function userButtons(cls) {
+    return db.users.map(function (u) {
+      return '<button class="' + cls + '" type="button" data-user="' + esc(u) + '"' +
+        ' aria-pressed="' + (u === me ? "true" : "false") + '">' + esc(u) + "</button>";
+    }).join("");
+  }
+
+  function renderSwitcher() {
+    $("switcher").innerHTML = me
+      ? '<span class="sw-label">Carnet tenu par</span>' + userButtons("sw-btn")
+      : "";
+    $("who-buttons").innerHTML = userButtons("btn who-btn");
+  }
+
+  function pickUser(ev) {
+    var btn = ev.target.closest("button[data-user]");
+    if (!btn) return;
+    setMe(btn.getAttribute("data-user"));
+    render();
+    setupInstallCard();
+  }
+
+  $("switcher").addEventListener("click", pickUser);
+  $("who-buttons").addEventListener("click", pickUser);
+
+  /* Every record keeps the name that was active when it was made, so renaming
+     or switching later never rewrites who did what. */
+  function stamp() { return me || "?"; }
+
+  function byLabel(name) {
+    if (!name || name === "?") return "";
+    return name === me ? "toi" : name;
+  }
+
+  /* ---------- setup ---------- */  /* ---------- setup ---------- */
 
   $("setup-form").addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -960,12 +1210,11 @@
       }
     }
     err.textContent = "";
-    state.profile = {
-      name: name || "Bébé",
-      sex: $("s-sex").value === "m" ? "m" : "f",
-      birthDate: birth,
-      birthWeight: bw
-    };
+    var b = A();
+    b.name = name || b.name || "Bébé";
+    b.sex = $("s-sex").value === "m" ? "m" : "f";
+    b.birthDate = birth;
+    b.birthWeight = bw;
     save();
     render();
   });
@@ -973,7 +1222,7 @@
   $("setup-cancel").addEventListener("click", function () { render(); });
 
   $("btn-edit").addEventListener("click", function () {
-    var p = state.profile;
+    var p = A();
     $("s-name").value = p.name === "Bébé" ? "" : p.name;
     $("s-sex").value = p.sex;
     $("s-birth").value = p.birthDate;
@@ -1003,11 +1252,14 @@
     var kg = $("a-unit").value === "g" ? val / 1000 : (val >= 100 ? val / 1000 : val);
     if (kg < 0.3 || kg > 30) { err.textContent = "Poids attendu entre 0,3 et 30 kg."; return; }
 
-    var days = daysBetween(state.profile.birthDate, date);
+    var days = daysBetween(A().birthDate, date);
     if (days < 0) { err.textContent = "Cette date précède la naissance."; return; }
 
     err.textContent = "";
-    state.entries.push({ id: String(days) + "-" + Math.round(kg * 1000) + "-" + state.entries.length, date: date, kg: kg });
+    A().entries.push({
+      id: String(days) + "-" + Math.round(kg * 1000) + "-" + A().entries.length,
+      date: date, kg: kg, by: stamp()
+    });
     save();
     $("a-weight").value = "";
     $("a-date").value = toISO(new Date());
@@ -1022,7 +1274,7 @@
     var btn = ev.target.closest("button[data-del]");
     if (!btn) return;
     var id = btn.getAttribute("data-del");
-    state.entries = state.entries.filter(function (e) { return e.id !== id; });
+    A().entries = A().entries.filter(function (e) { return e.id !== id; });
     save();
     render();
   });
@@ -1048,12 +1300,10 @@
     if (!box.value.trim()) { toolMsg("Colle d’abord des données dans le cadre."); return; }
     try {
       var parsed = JSON.parse(box.value);
-      if (!parsed || !parsed.profile || !parsed.profile.birthDate) throw new Error("format");
-      state = {
-        profile: parsed.profile,
-        entries: Array.isArray(parsed.entries) ? parsed.entries : [],
-        changes: Array.isArray(parsed.changes) ? parsed.changes : []
-      };
+      var adopted = adopt(parsed);
+      if (!adopted) throw new Error("format");
+      db.baby = adopted;
+      if (Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
       save();
       toolMsg("Données importées.");
       render();
@@ -1063,108 +1313,355 @@
   });
 
   $("btn-reset").addEventListener("click", function () {
-    if (!window.confirm("Effacer le profil et toutes les pesées ? C’est définitif.")) return;
-    state = { profile: null, entries: [], changes: [] };
-    try { window.localStorage.removeItem(KEY); } catch (e) {}
+    var b = A();
+    if (!window.confirm("Effacer les pesées et les changes de " + b.name + " ? C’est définitif.")) return;
+    b.birthDate = null; b.birthWeight = null; b.entries = []; b.changes = [];
+    save();
     $("setup-form").reset();
     $("setup-submit").textContent = "Commencer";
     $("setup-cancel").hidden = true;
     render();
   });
 
-  /* ---------- couches ---------- */
+  /* ---------- onglets ---------- */
+
+  var tab = "sacha";
+
+  function scopeTasks(scope) {
+    return db.tasks.filter(function (t) { return (t.scope || "sacha") === scope; });
+  }
+
+  function lateCount(scope) {
+    return scopeTasks(scope).filter(function (t) {
+      return t.freq && t.freq.everyH && taskStatus(t).state === "due";
+    }).length;
+  }
+
+  function renderTabs() {
+    $("tabs").innerHTML = TABS.map(function (t) {
+      var late = lateCount(t.id);
+      return '<button class="tab" type="button" role="tab" data-tab="' + t.id + '"' +
+        ' aria-selected="' + (t.id === tab ? "true" : "false") + '">' + esc(t.label) +
+        (late ? '<span class="badge" aria-label="' + late + ' en retard">' + late + "</span>" : "") +
+        "</button>";
+    }).join("");
+  }
+
+  $("tabs").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-tab]");
+    if (!btn) return;
+    tab = btn.getAttribute("data-tab");
+    logFilter = "";
+    render();
+  });
+
+  /* ---------- soins : des tâches, pas des cartes figées ---------- */
 
   var fmtTime = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-  function sortedChanges() {
-    return state.changes.slice().sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+  /* Stamps are minute-precision, so two records often tie. Fall back to the
+     order they were added, newest first, or something just noted would not
+     appear at the top of the list. */
+  function newestFirst(list) {
+    return list.map(function (x, i) { return { x: x, i: i }; })
+      .sort(function (a, b) { return a.x.at < b.x.at ? 1 : a.x.at > b.x.at ? -1 : b.i - a.i; })
+      .map(function (p) { return p.x; });
   }
 
-  function addChange(type, at) {
-    if (!TYPES[type]) return;
-    state.changes.push({ id: "c" + at + "-" + state.changes.length, at: at, type: type });
-    save();
-    renderChanges();
-    var d = parseLocal(at);
-    toast("Change noté : " + TYPES[type].label.toLowerCase() + " à " + fmtTime.format(d) + ".");
+  /* Frequency presets. Two shapes, because they answer different questions:
+     "combien de fois aujourd'hui" for a daily dose, "quand la prochaine" for
+     something on a rolling clock. */
+  var FREQS = [
+    { key: "",     label: "Au besoin",        freq: null },
+    { key: "1j",   label: "1 × par jour",     freq: { perDay: 1 } },
+    { key: "2j",   label: "2 × par jour",     freq: { perDay: 2 } },
+    { key: "3j",   label: "3 × par jour",     freq: { perDay: 3 } },
+    { key: "4j",   label: "4 × par jour",     freq: { perDay: 4 } },
+    { key: "h3",   label: "Toutes les 3 h",   freq: { everyH: 3 } },
+    { key: "h4",   label: "Toutes les 4 h",   freq: { everyH: 4 } },
+    { key: "h6",   label: "Toutes les 6 h",   freq: { everyH: 6 } },
+    { key: "h12",  label: "Toutes les 12 h",  freq: { everyH: 12 } },
+    { key: "h48",  label: "Tous les 2 jours", freq: { everyH: 48 } },
+    { key: "h168", label: "1 × par semaine",  freq: { everyH: 168 } },
+    { key: "h336", label: "Tous les 15 jours", freq: { everyH: 336 } },
+    { key: "h720", label: "1 × par mois",      freq: { everyH: 720 } },
+    { key: "h1080", label: "Tous les 45 jours", freq: { everyH: 1080 } },
+    { key: "h2160", label: "Tous les 3 mois",  freq: { everyH: 2160 } },
+    { key: "h4320", label: "Tous les 6 mois",  freq: { everyH: 4320 } }
+  ];
+
+  function sameFreq(a, b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a.perDay === b.perDay && a.everyH === b.everyH;
+  }
+  function freqKey(f) {
+    for (var i = 0; i < FREQS.length; i++) if (sameFreq(FREQS[i].freq, f)) return FREQS[i].key;
+    return "";
+  }
+  function freqFromKey(k) {
+    for (var i = 0; i < FREQS.length; i++) if (FREQS[i].key === k) return FREQS[i].freq;
+    return null;
   }
 
-  $("dc-types").addEventListener("click", function (ev) {
-    var btn = ev.target.closest("button[data-type]");
-    if (!btn) return;
-    addChange(btn.getAttribute("data-type"), nowLocal());
-  });
+  function taskById(id) {
+    for (var i = 0; i < db.tasks.length; i++) if (db.tasks[i].id === id) return db.tasks[i];
+    return null;
+  }
 
-  $("dc-form").addEventListener("submit", function (ev) {
-    ev.preventDefault();
-    var at = $("dc-at").value;
-    var err = $("dc-err");
-    if (!at) { err.textContent = "Choisis une date et une heure."; return; }
-    if (parseLocal(at) - new Date() > 60000) { err.textContent = "Cette heure est dans le futur."; return; }
-    err.textContent = "";
-    addChange($("dc-type").value, at.slice(0, 16));
-  });
+  function eventsFor(id) {
+    return newestFirst(db.events.filter(function (e) { return e.taskId === id; }));
+  }
 
-  $("dc-list").addEventListener("click", function (ev) {
-    var btn = ev.target.closest("button[data-delc]");
-    if (!btn) return;
-    var id = btn.getAttribute("data-delc");
-    state.changes = state.changes.filter(function (c) { return c.id !== id; });
-    save();
-    renderChanges();
-  });
+  function variantLabel(t, key) {
+    if (!t || !t.variants) return "";
+    for (var i = 0; i < t.variants.length; i++) if (t.variants[i].key === key) return t.variants[i].label;
+    return key;
+  }
 
-  function renderChanges() {
-    var all = sortedChanges();
+  function taskStatus(t) {
+    var evs = eventsFor(t.id);
+    var last = evs[0] || null;
     var now = new Date();
     var todayISO = toISO(now);
+    var doneToday = evs.filter(function (e) { return e.at.slice(0, 10) === todayISO; }).length;
 
-    /* last change */
-    if (all.length) {
-      var d = parseLocal(all[0].at);
-      /* floor, not round: stamps are minute-precision, so a change noted 40 s ago
-         must read "à l’instant" rather than being rounded up to a minute. */
-      var mins = Math.max(0, Math.floor((now - d) / 60000));
-      $("dc-since").textContent = sinceLabel(mins);
-      $("dc-when").innerHTML = marksHtml(all[0].type) + " " + TYPES[all[0].type].label.toLowerCase() +
-        " · " + (all[0].at.slice(0, 10) === todayISO ? "" : shortDate(all[0].at.slice(0, 10)) + " ") + fmtTime.format(d);
-    } else {
-      $("dc-since").textContent = "—";
-      $("dc-when").textContent = "aucun change noté";
+    var state = "none", chip = "";
+    if (t.freq && t.freq.perDay) {
+      state = doneToday >= t.freq.perDay ? "ok" : "due";
+      chip = doneToday + " / " + t.freq.perDay + " aujourd’hui";
+    } else if (t.freq && t.freq.everyH) {
+      if (!last) { state = "due"; chip = "jamais fait"; }
+      else {
+        var due = parseLocal(last.at).getTime() + t.freq.everyH * 3600000;
+        var gap = Math.floor(Math.abs(now.getTime() - due) / 60000);
+        state = now.getTime() >= due ? "due" : "ok";
+        /* Late is the case that matters: say by how much, not just "à faire". */
+        chip = state === "due"
+          ? (gap < 60 ? "à faire" : "en retard de " + durationLabel(gap))
+          : "dans " + durationLabel(gap);
+      }
     }
 
-    /* today */
-    var today = all.filter(function (c) { return c.at.slice(0, 10) === todayISO; });
-    var wet = today.filter(function (c) { return c.type !== "caca"; }).length;
-    var soiled = today.filter(function (c) { return c.type !== "pipi"; }).length;
-    $("dc-today").textContent = today.length + (today.length > 1 ? " changes" : " change");
-    $("dc-today-n").textContent = today.length
-      ? wet + " avec pipi · " + soiled + " avec caca"
-      : "rien de noté aujourd’hui";
-
-    /* 7-day average, counted over the days actually covered */
-    var since = new Date(now.getTime() - 6 * 86400000);
-    var window7 = all.filter(function (c) { return parseLocal(c.at) >= since; });
-    if (window7.length) {
-      var firstDay = parseLocal(window7[window7.length - 1].at);
-      var days = Math.max(1, Math.round((now - firstDay) / 86400000) + 1);
-      $("dc-avg").textContent = nf(window7.length / days, 1) + " / jour";
+    var when;
+    if (last) {
+      var w = byLabel(last.by);
+      when = sinceLabel(Math.max(0, Math.floor((now - parseLocal(last.at)) / 60000))) +
+        (w ? " · " + w : "") +
+        (last.variant ? " · " + variantLabel(t, last.variant).toLowerCase() : "");
     } else {
-      $("dc-avg").textContent = "—";
+      when = freqText(t.freq) || "jamais noté";
     }
 
-    /* recent list */
-    var list = $("dc-list");
+    return { state: state, chip: chip, when: when, last: last, doneToday: doneToday };
+  }
+
+  function logEvent(taskId, variant) {
+    var t = taskById(taskId);
+    if (!t) return;
+
+    /* On a rhythm, a second one before it is due is usually a slip — name what
+       is already recorded rather than stacking a silent duplicate. */
+    var st = taskStatus(t);
+    if (t.freq && st.state === "ok" && st.last) {
+      var who = byLabel(st.last.by);
+      if (!window.confirm(t.name + " : déjà noté" + (who ? " par " + who : "") +
+          " à " + fmtTime.format(parseLocal(st.last.at)) + ". Noter quand même ?")) return;
+    }
+
+    var at = nowLocal();
+    db.events.push({
+      id: "e" + at + "-" + db.events.length,
+      taskId: taskId, at: at, by: stamp(), variant: variant || null
+    });
+    save();
+    renderCare();
+    renderTabs();
+    renderLog();
+    toast(t.name + (variant ? " · " + variantLabel(t, variant).toLowerCase() : "") +
+      " · noté à " + fmtTime.format(parseLocal(at)) + ".");
+  }
+
+  function renderCare() {
+    /* Keep an open variant panel open across the re-render. */
+    var open = {};
+    Array.prototype.forEach.call($("task-list").querySelectorAll(".variants:not(.hidden)"), function (v) {
+      open[v.getAttribute("data-for")] = true;
+    });
+
+    $("task-list").innerHTML = scopeTasks(tab).map(function (t) {
+      var st = taskStatus(t);
+      var row = '<button class="task" type="button" data-task="' + esc(t.id) + '">' +
+        '<span class="t-main"><span class="t-name">' + esc(t.name) + "</span>" +
+        '<span class="t-when">' + esc(st.when) + "</span></span>" +
+        (st.chip
+          ? '<span class="t-chip ' + st.state + '">' + esc(st.chip) + "</span>"
+          : '<span class="t-go" aria-hidden="true">+</span>') +
+        "</button>";
+      if (t.variants) {
+        row += '<div class="variants' + (open[t.id] ? "" : " hidden") + '" data-for="' + esc(t.id) + '">' +
+          t.variants.map(function (v) {
+            return '<button class="tbtn" type="button" data-task="' + esc(t.id) +
+              '" data-variant="' + esc(v.key) + '">' + marksHtml(v.key) + esc(v.label) + "</button>";
+          }).join("") + "</div>";
+      }
+      return row;
+    }).join("");
+  }
+
+  $("task-list").addEventListener("click", function (ev) {
+    var vb = ev.target.closest("button[data-variant]");
+    if (vb) {
+      logEvent(vb.getAttribute("data-task"), vb.getAttribute("data-variant"));
+      return;
+    }
+    var tb = ev.target.closest("button[data-task]");
+    if (!tb) return;
+    var t = taskById(tb.getAttribute("data-task"));
+    if (!t) return;
+    if (t.variants) {
+      /* Ask what was in it before recording — that is the point of the task. */
+      var panel = $("task-list").querySelector('.variants[data-for="' + t.id + '"]');
+      if (panel) panel.classList.toggle("hidden");
+      return;
+    }
+    logEvent(t.id, null);
+  });
+
+  /* ---------- gérer les tâches ---------- */
+
+  function freqText(f) {
+    for (var i = 0; i < FREQS.length; i++) {
+      if (FREQS[i].freq && sameFreq(FREQS[i].freq, f)) return FREQS[i].label.toLowerCase();
+    }
+    return null;
+  }
+
+  function freqOptions(selected) {
+    return FREQS.map(function (f) {
+      return '<option value="' + f.key + '"' + (f.key === selected ? " selected" : "") +
+        ">" + esc(f.label) + "</option>";
+    }).join("");
+  }
+
+  function renderTaskAdmin() {
+    if (!$("t-freq").options.length) $("t-freq").innerHTML = freqOptions("");
+    $("task-admin").innerHTML = scopeTasks(tab).map(function (t) {
+      return '<div class="admin-row">' +
+        '<span class="a-name">' + esc(t.name) + "</span>" +
+        '<select data-task="' + esc(t.id) + '" aria-label="Fréquence de ' + esc(t.name) + '">' +
+          freqOptions(freqKey(t.freq)) + "</select>" +
+        '<button class="del" type="button" data-delt="' + esc(t.id) +
+          '" aria-label="Supprimer ' + esc(t.name) + '">×</button>' +
+        "</div>";
+    }).join("");
+  }
+
+  $("task-admin").addEventListener("change", function (ev) {
+    var sel = ev.target.closest("select[data-task]");
+    if (!sel) return;
+    var t = taskById(sel.getAttribute("data-task"));
+    if (!t) return;
+    t.freq = freqFromKey(sel.value);
+    save();
+    renderCare();
+    renderTabs();
+  });
+
+  $("task-admin").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-delt]");
+    if (!btn) return;
+    var t = taskById(btn.getAttribute("data-delt"));
+    if (!t) return;
+    var kept = eventsFor(t.id).length;
+    if (!window.confirm("Supprimer « " + t.name + " » ?" +
+        (kept ? " Ses " + kept + " entrées d’historique partent aussi." : ""))) return;
+    db.tasks = db.tasks.filter(function (x) { return x.id !== t.id; });
+    db.events = db.events.filter(function (e) { return e.taskId !== t.id; });
+    if (logFilter === t.id) logFilter = "";
+    save();
+    renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
+  });
+
+  $("task-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var name = $("t-name").value.trim();
+    var err = $("task-err");
+    if (!name) { err.textContent = "Donne un nom à la tâche."; return; }
+    var here = scopeTasks(tab);
+    for (var i = 0; i < here.length; i++) {
+      if (here[i].name.toLowerCase() === name.toLowerCase()) {
+        err.textContent = "Cette tâche existe déjà dans cet onglet.";
+        return;
+      }
+    }
+    err.textContent = "";
+    db.tasks.push({
+      id: "t" + Math.round(Math.random() * 1e9).toString(36) + db.tasks.length,
+      scope: tab, name: name,
+      freq: freqFromKey($("t-freq").value), variants: null
+    });
+    save();
+    $("t-name").value = "";
+    renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
+    toast("Tâche « " + name + " » ajoutée.");
+  });
+
+  /* ---------- qui a fait quoi ---------- */
+
+  var logFilter = "";
+
+  $("log-filter").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-filter]");
+    if (!btn) return;
+    logFilter = btn.getAttribute("data-filter");
+    renderLog();
+  });
+
+  $("log-list").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-dele]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-dele");
+    db.events = db.events.filter(function (e) { return e.id !== id; });
+    save();
+    renderCare(); renderTabs(); renderLog();
+  });
+
+  function renderLog() {
+    $("log-filter").innerHTML =
+      '<button type="button" data-filter="" aria-pressed="' + (logFilter ? "false" : "true") + '">Tout</button>' +
+      scopeTasks(tab).map(function (t) {
+        return '<button type="button" data-filter="' + esc(t.id) + '" aria-pressed="' +
+          (logFilter === t.id ? "true" : "false") + '">' + esc(t.name) + "</button>";
+      }).join("");
+
+    var inTab = {};
+    scopeTasks(tab).forEach(function (t) { inTab[t.id] = true; });
+
+    var all = newestFirst(db.events).filter(function (e) {
+      return inTab[e.taskId] && (!logFilter || e.taskId === logFilter);
+    });
+
+    var todayISO = toISO(new Date());
+    var list = $("log-list");
     list.innerHTML = "";
-    show($("dc-empty"), all.length === 0);
-    all.slice(0, 10).forEach(function (c) {
-      var when = parseLocal(c.at);
-      var sameDay = c.at.slice(0, 10) === todayISO;
+    show($("log-empty"), all.length === 0);
+
+    all.slice(0, 40).forEach(function (e) {
+      var t = taskById(e.taskId);
+      var when = parseLocal(e.at);
+      var sameDay = e.at.slice(0, 10) === todayISO;
+      var who = byLabel(e.by);
       var li = document.createElement("li");
-      li.innerHTML = marksHtml(c.type) +
-        '<span class="c-label">' + TYPES[c.type].label + "</span>" +
-        '<span class="c-time">' + (sameDay ? "" : shortDate(c.at.slice(0, 10)) + " · ") + fmtTime.format(when) + "</span>" +
-        '<button class="del" type="button" data-delc="' + c.id + '" aria-label="Supprimer ce change">×</button>';
+      li.innerHTML =
+        (t && t.variants && e.variant ? marksHtml(e.variant) : '<span class="marks"></span>') +
+        '<span class="c-label">' + esc(t ? t.name : "tâche supprimée") +
+          (e.variant && t ? ' <span class="by">' + esc(variantLabel(t, e.variant).toLowerCase()) + "</span>" : "") +
+          (who ? ' <span class="by">· ' + esc(who) + "</span>" : "") + "</span>" +
+        '<span class="c-time">' + (sameDay ? "" : shortDate(e.at.slice(0, 10)) + " · ") +
+          fmtTime.format(when) + "</span>" +
+        '<button class="del" type="button" data-dele="' + esc(e.id) +
+          '" aria-label="Supprimer cette entrée">×</button>';
       list.appendChild(li);
     });
   }
@@ -1184,17 +1681,51 @@
   /* ================= rendering ================= */
 
   function render() {
-    var hasProfile = !!(state.profile && state.profile.birthDate);
+    renderSwitcher();
 
-    show(setupCard, !hasProfile);
-    show(heroCard, hasProfile);
-    show($("diaper-card"), hasProfile);
-    show(chartCard, hasProfile);
-    show(addCard, hasProfile);
-    show(histCard, hasProfile);
+    /* Nothing is shown before we know who is holding the phone: every entry
+       made from here on is signed, so the name has to come first. */
+    var known = !!me;
+    var hasProfile = known && !!A().birthDate;
+
+    var baby = tab === "sacha";
+    show($("tabs"), known);
+    show($("who-card"), !known);
+    show(setupCard, known && baby && !hasProfile);
+    show(heroCard, hasProfile && baby);
+    show($("care-card"), known && (baby ? hasProfile : true));
+    show($("log-card"), known && (baby ? hasProfile : true));
+    show(chartCard, hasProfile && baby);
+    show(addCard, hasProfile && baby);
+    show(histCard, hasProfile && baby);
+    if (!known) {
+      show($("install-card"), false);
+      return;
+    }
+    renderTabs();
+    $("care-title").textContent = baby ? "Soins" : "Entretien";
+    show($("footer-baby"), baby);
+
+    /* The Maison tab has no baby to set up: its tasks stand on their own. */
+    if (!baby) {
+      renderCare();
+      renderTaskAdmin();
+      renderLog();
+      return;
+    }
+
+    $("setup-who").textContent = hasProfile ? "" : "Complète la date de naissance pour commencer.";
 
     if (!hasProfile) {
-      if (!$("s-birth").value) $("s-birth").value = toISO(new Date());
+      /* Fill every field from the active child — leaving another profile's
+         birth weight sitting in the form would silently attach it here. */
+      var b = A();
+      $("s-name").value = b.name;
+      $("s-sex").value = b.sex;
+      $("s-birth").value = b.birthDate || toISO(new Date());
+      $("s-bw").value = b.birthWeight == null ? "" : nf(b.birthWeight, 2);
+      $("setup-err").textContent = "";
+      renderHistory([]);
       return;
     }
 
@@ -1203,19 +1734,20 @@
 
     var pts = series();
     renderHero(pts);
-    renderChanges();
-    $("dc-at").value = nowLocal();
+    renderCare();
+    renderTaskAdmin();
+    renderLog();
     renderHistory(pts);
     drawChart();
 
     var today = toISO(new Date());
-    if (!$("a-date").value || $("a-date").value < state.profile.birthDate) $("a-date").value = today;
-    $("a-date").min = state.profile.birthDate;
+    if (!$("a-date").value || $("a-date").value < A().birthDate) $("a-date").value = today;
+    $("a-date").min = A().birthDate;
     $("a-date").max = today;
   }
 
   function renderHero(pts) {
-    var p = state.profile;
+    var p = A();
     var todayDays = daysBetween(p.birthDate, toISO(new Date()));
 
     $("h-name").textContent = p.name;
@@ -1336,7 +1868,9 @@
       var rate = prev && dd > 0 ? dg / dd : null;
 
       tr.innerHTML =
-        "<td>" + shortDate(e.date) + (e.birth ? ' <span class="dim">naissance</span>' : "") + "</td>" +
+        "<td>" + shortDate(e.date) +
+          (e.birth ? ' <span class="dim">naissance</span>'
+                   : (byLabel(e.by) ? ' <span class="dim">· ' + esc(byLabel(e.by)) + "</span>" : "")) + "</td>" +
         '<td class="dim">' + ageShort(e.days) + "</td>" +
         "<td>" + fmtKg(e.kg) + " kg</td>" +
         '<td class="dim">' + (dg == null ? "—" : signed(dg) + " g") + "</td>" +
@@ -1366,7 +1900,7 @@
     var old = plot.querySelector("svg");
     if (old) plot.removeChild(old);
 
-    var p = state.profile;
+    var p = A();
     var pts = series();
 
     var W = Math.max(280, plot.clientWidth || 320);
@@ -1553,7 +2087,7 @@
   window.addEventListener("resize", function () {
     if (rAF) window.cancelAnimationFrame(rAF);
     rAF = window.requestAnimationFrame(function () {
-      if (state.profile) drawChart();
+      if (A().birthDate) drawChart();
     });
   });
 
@@ -1621,15 +2155,19 @@
   }
 
   /* The elapsed time is the whole point of the line — keep it honest. */
-  window.setInterval(function () { if (state.profile) renderChanges(); }, 60000);
+  window.setInterval(function () {
+    if (!me) return;
+    renderCare();
+    renderTabs();
+  }, 60000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && state.profile) renderChanges();
+    if (!document.hidden && me) { renderCare(); renderTabs(); }
   });
 
   /* ================= boot ================= */
   memoryOnly = !storageWorks();
   load();
   render();
-  setupInstallCard();
+  if (me) setupInstallCard();
 })();
 </script>

@@ -7,49 +7,74 @@ Petit service Flask, déployé sur Render (`gunicorn app:app`).
 | Route | Contenu |
 |---|---|
 | `/` | Indice d'activité du centre-ville de Montpellier |
-| `/poids-bebe/` | Carnet de bébé — couches et suivi du poids |
+| `/poids-bebe/` | Chez nous — tâches du foyer, soins et poids de Sacha |
 
-## Carnet de bébé
+## Chez nous
 
 Application autonome, dans [`docs/`](docs/) : aucune dépendance, aucun serveur,
-aucune base de données. Les mêmes fichiers sont servis par Flask sur
-`/poids-bebe/` et publiables tels quels par GitHub Pages.
+aucune base de données. C'est l'app du foyer — ce qu'il y a à faire pour Sacha,
+ce qu'il y a à faire pour le logement, et qui l'a fait.
 
-**Couches**
+**Deux onglets**
 
-- un bouton par contenu — pipi, caca, les deux — qui note le change à l'heure courante en un seul geste ;
-- temps écoulé depuis le dernier change, tenu à jour tant que la page reste ouverte ;
-- compte du jour détaillé par contenu, moyenne sur sept jours, et les dix derniers changes ;
-- rattrapage d'un change oublié à une autre heure, les heures futures étant refusées.
+`Sacha` et `Maison`. Chacun a ses tâches et son historique ; le poids et la
+courbe OMS n'existent que côté Sacha. Un badge sur l'onglet compte ce qui est en
+retard, visible depuis l'autre onglet.
 
-**Poids**
+**Qui tient le carnet**
 
-- saisie des pesées en kg ou en g, à partir du profil du bébé (prénom, sexe, date et poids de naissance) ;
-- courbe de poids comparée aux standards de croissance de l'OMS (poids-pour-âge, 0–24 mois) avec les zones P3–P97 et P15–P85 ;
-- prise depuis la naissance, depuis la dernière pesée, rythme en g/jour avec le repère attendu pour l'âge, et percentile estimé ;
-- historique modifiable, export/import des données en JSON.
+À la première ouverture l'app demande qui utilise l'appareil — Fleur ou Raph — et
+chaque geste noté ensuite porte ce prénom. Le choix est retenu sur l'appareil,
+sous sa propre clé, et se change en un geste. Les enregistrements gardent le nom
+qui était actif au moment du geste.
+
+**Tâches**
+
+- une liste que l'on complète, dans chaque onglet : Couche, Vitamines, Bain côté
+  Sacha ; Entretien de la machine à café côté Maison ;
+- une tâche se note en un geste ; celles qui ont des variantes — la couche : pipi,
+  caca, les deux — demandent laquelle avant d'enregistrer ;
+- fréquence de deux natures : « N fois par jour », qui affiche le compte du jour,
+  ou « toutes les X heures », de 3 heures à 6 mois, qui affiche l'échéance ;
+- une tâche en retard dit **de combien** et allume le badge de son onglet ; une
+  tâche déjà faite dans son rythme demande confirmation avant un doublon.
+
+**Qui a fait quoi**
+
+Un historique par onglet, du plus récent au plus ancien : la tâche, sa variante,
+le prénom, l'heure. Filtrable par tâche, chaque ligne supprimable.
+
+**Poids de Sacha**
+
+- pesées en kg ou en g, à partir de la date et du poids de naissance ;
+- courbe comparée aux standards OMS (poids-pour-âge, 0–24 mois), zones P3–P97 et P15–P85 ;
+- prise depuis la naissance et depuis la dernière pesée, rythme en g/jour face au
+  repère de l'âge, percentile estimé ;
+- historique signé, export/import des données en JSON.
 
 Les données sont stockées dans le `localStorage` du navigateur : rien ne transite
 par le serveur. Si le navigateur refuse le stockage (navigation privée), l'app le
-dit au lieu de perdre les pesées en silence.
+dit au lieu de perdre les données en silence.
 
 ### Installation sur l'écran d'accueil
 
 L'app est une PWA : manifeste, icônes et service worker (`docs/sw.js`) qui met en
 cache la coquille, ce qui la rend utilisable sans réseau une fois installée.
 
-Deux façons de publier l'URL d'installation :
+L'icône n'apparaît sur l'écran d'accueil que si l'app est servie depuis son
+propre domaine. Hébergée dans le cadre d'un autre site, c'est l'icône du site
+hôte qui est retenue.
 
-- **Automatique** — le workflow [`pages.yml`](.github/workflows/pages.yml) publie
-  `docs/` à chaque poussée sur `main` et active Pages lui-même au premier passage
-  (`configure-pages` avec `enablement: true`).
-- **Manuelle** — **Settings → Pages → Deploy from a branch**, en choisissant la
-  branche voulue et le dossier `/docs`. Utile pour publier une branche de travail
-  sans passer par `main`.
+**Déploiement Vercel.** Le dossier `docs/` est un site statique complet. Sur
+Vercel : *Add New → Project*, choisir ce dépôt, régler **Root Directory** sur
+`docs`, déployer. Aucune commande de build. `docs/vercel.json` empêche la mise en
+cache du service worker et du manifeste, sinon une version installée resterait
+figée. Les poussées suivantes sur la branche de production se déploient seules.
 
-Dans les deux cas l'app est servie à
-`https://<compte>.github.io/montpellier-activity-index/` — le chemin du dépôt
-compte, la racine du domaine ne renvoie rien.
+**GitHub Pages, en variante.** *Settings → Pages → Deploy from a branch*, branche
+`main`, dossier `/docs`. Le workflow [`pages.yml`](.github/workflows/pages.yml)
+tente aussi l'activation automatique, mais le jeton d'Actions n'a pas toujours le
+droit de créer le site.
 
 Le service worker exige HTTPS (ou `localhost`) : sur `file://` la page fonctionne
 mais sans mode hors-ligne.

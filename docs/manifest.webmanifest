@@ -1,7 +1,7 @@
 {
-  "name": "Carnet de bébé",
-  "short_name": "Bébé",
-  "description": "Suivi d'un bébé : couches, pesées, courbe OMS et rythme de prise en g/jour.",
+  "name": "Chez nous",
+  "short_name": "Chez nous",
+  "description": "Ce qui tourne à la maison : les soins de Sacha, l'entretien du logement, et qui a fait quoi.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": ".",
