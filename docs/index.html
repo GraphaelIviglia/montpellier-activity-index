@@ -728,6 +728,32 @@
     <h2 id="care-title">Soins</h2>
     <div class="tasks" id="task-list"></div>
 
+    <details class="tools" id="late-tools">
+      <summary>Noter après coup</summary>
+      <form id="late-form">
+        <div class="row" style="margin-top: 12px;">
+          <div class="field" style="flex: 2 1 160px;">
+            <label for="l-task">Tâche</label>
+            <select id="l-task"></select>
+          </div>
+          <div class="field hidden" id="l-variant-field">
+            <label for="l-variant">Contenu</label>
+            <select id="l-variant"></select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="l-at">Quand</label>
+            <input id="l-at" type="datetime-local" required />
+          </div>
+        </div>
+        <p class="err" id="late-err" role="alert"></p>
+        <div class="row">
+          <button class="btn small" type="submit">Noter cette tâche</button>
+        </div>
+      </form>
+    </details>
+
     <details class="tools" id="care-tools">
       <summary>Gérer les tâches</summary>
       <div id="task-admin"></div>
@@ -1631,20 +1657,25 @@
     return { state: state, chip: chip, when: when, last: last, doneToday: doneToday };
   }
 
-  function logEvent(taskId, variant) {
+  /* `when` : un moment choisi, pour rattraper un oubli. Dans ce cas la garde
+     anti-doublon ne s'applique pas — on ne note pas par mégarde une tâche dont
+     on vient d'aller chercher la date à la main. */
+  function logEvent(taskId, variant, when) {
     var t = taskById(taskId);
     if (!t) return;
 
-    /* On a rhythm, a second one before it is due is usually a slip — name what
-       is already recorded rather than stacking a silent duplicate. */
-    var st = taskStatus(t);
-    if (t.freq && st.state === "ok" && st.last) {
-      var who = byLabel(st.last.by);
-      if (!window.confirm(t.name + " : déjà noté" + (who ? " par " + who : "") +
-          " à " + fmtTime.format(parseLocal(st.last.at)) + ". Noter quand même ?")) return;
+    if (!when) {
+      /* On a rhythm, a second one before it is due is usually a slip — name what
+         is already recorded rather than stacking a silent duplicate. */
+      var st = taskStatus(t);
+      if (t.freq && st.state === "ok" && st.last) {
+        var who = byLabel(st.last.by);
+        if (!window.confirm(t.name + " : déjà noté" + (who ? " par " + who : "") +
+            " à " + fmtTime.format(parseLocal(st.last.at)) + ". Noter quand même ?")) return;
+      }
     }
 
-    var at = nowLocal();
+    var at = when || nowLocal();
     db.events.push({
       id: "e" + at + "-" + db.events.length,
       taskId: taskId, at: at, by: stamp(), variant: variant || null
@@ -1657,8 +1688,11 @@
     renderCare();
     renderTabs();
     renderLog();
+    var d = parseLocal(at);
+    var sameDay = at.slice(0, 10) === toISO(new Date());
     toast(t.name + (variant ? " · " + variantLabel(t, variant).toLowerCase() : "") +
-      " · noté à " + fmtTime.format(parseLocal(at)) + ".");
+      " · noté " + (sameDay ? "à " : "le " + shortDate(at.slice(0, 10)) + " à ") +
+      fmtTime.format(d) + ".");
   }
 
   function renderCare() {
@@ -1705,6 +1739,44 @@
       return;
     }
     logEvent(t.id, null);
+  });
+
+  /* ---------- rattraper un oubli ---------- */
+
+  function renderLate() {
+    var here = scopeTasks(tab);
+    var sel = $("l-task");
+    var keep = sel.value;
+    sel.innerHTML = here.map(function (t) {
+      return '<option value="' + esc(t.id) + '">' + esc(t.name) + "</option>";
+    }).join("");
+    if (keep && here.filter(function (t) { return t.id === keep; }).length) sel.value = keep;
+    renderLateVariants();
+    if (!$("l-at").value) $("l-at").value = nowLocal();
+  }
+
+  function renderLateVariants() {
+    var t = taskById($("l-task").value);
+    var field = $("l-variant-field");
+    if (!t || !t.variants) { show(field, false); return; }
+    $("l-variant").innerHTML = t.variants.map(function (v) {
+      return '<option value="' + esc(v.key) + '">' + esc(v.label) + "</option>";
+    }).join("");
+    show(field, true);
+  }
+
+  $("l-task").addEventListener("change", renderLateVariants);
+
+  $("late-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var err = $("late-err");
+    var t = taskById($("l-task").value);
+    var at = $("l-at").value;
+    if (!t) { err.textContent = "Choisis une tâche."; return; }
+    if (!at) { err.textContent = "Choisis une date et une heure."; return; }
+    if (parseLocal(at) - new Date() > 60000) { err.textContent = "Ce moment est dans le futur."; return; }
+    err.textContent = "";
+    logEvent(t.id, t.variants ? $("l-variant").value : null, at.slice(0, 16));
   });
 
   /* ---------- gérer les tâches ---------- */
@@ -1760,7 +1832,7 @@
     if (logFilter === t.id) logFilter = "";
     save();
     enqueue({ kind: "untask", id: t.id });
-    renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
+    renderCare(); renderTaskAdmin(); renderLate(); renderTabs(); renderLog();
   });
 
   $("task-form").addEventListener("submit", function (ev) {
@@ -1783,7 +1855,7 @@
     });
     save();
     $("t-name").value = "";
-    renderCare(); renderTaskAdmin(); renderTabs(); renderLog();
+    renderCare(); renderTaskAdmin(); renderLate(); renderTabs(); renderLog();
     toast("Tâche « " + name + " » ajoutée.");
   });
 
@@ -2007,6 +2079,7 @@
     if (!baby) {
       renderCare();
       renderTaskAdmin();
+      renderLate();
       renderStocks();
       renderStockAdmin();
       renderLog();
@@ -2035,6 +2108,7 @@
     renderHero(pts);
     renderCare();
     renderTaskAdmin();
+    renderLate();
     renderLog();
     renderHistory(pts);
     drawChart();
