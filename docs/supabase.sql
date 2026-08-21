@@ -41,3 +41,22 @@ create policy "carnet ouvert au foyer" on chez_nous_state
 drop policy if exists "gestes ouverts au foyer" on chez_nous_events;
 create policy "gestes ouverts au foyer" on chez_nous_events
   for all to anon using (true) with check (true);
+
+-- Abonnements aux rappels (une ligne par appareil ayant accepté).
+-- Nécessaire seulement si tu actives le rappel des vitamines.
+create table if not exists chez_nous_push (
+  endpoint   text primary key,
+  household  text not null,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists chez_nous_push_household_idx
+  on chez_nous_push (household);
+
+alter table chez_nous_push enable row level security;
+
+drop policy if exists "abonnements ouverts au foyer" on chez_nous_push;
+create policy "abonnements ouverts au foyer" on chez_nous_push
+  for all to anon using (true) with check (true);

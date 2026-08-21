@@ -13,5 +13,10 @@
 window.CHEZ_NOUS = {
   SUPABASE_URL: "https://ddqvqnsrsxjlntabbnwb.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_upiFaGTJgyqkWeGSR901Mg_ubKEuK-b",
-  FOYER: "fleur-raph"
+  FOYER: "fleur-raph",
+
+  /* Clé publique VAPID du rappel des vitamines. Sans elle, la carte « Rappel »
+     reste discrète et l'app fonctionne comme avant. Sa jumelle privée vit dans
+     les variables d'environnement Vercel, jamais ici. */
+  VAPID_PUBLIC_KEY: "BLisV1ndH5fGNHh2R5nXcdWQ2QKFaMBp3V31BvYTFCfPsutRpNyrlT-crVYXHPv9A4AocwSsYtpPQVyXzqKnWbs"
 };

@@ -1,0 +1,8 @@
+{
+  "name": "chez-nous",
+  "private": true,
+  "description": "Fonctions serveur du carnet Chez nous (rappel des vitamines).",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

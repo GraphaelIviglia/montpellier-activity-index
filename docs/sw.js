@@ -5,7 +5,7 @@
  * Bump CACHE when any of those files change: the old cache is then dropped.
  */
 
-var CACHE = "chez-nous-v11";
+var CACHE = "chez-nous-v12";
 
 var SHELL = [
   ".",
@@ -59,4 +59,67 @@ self.addEventListener("fetch", function (event) {
         });
       })
   );
+});
+
+/* ---------- rappel des vitamines ----------
+ *
+ * La poussée arrive sans contenu : on relit l'état avant d'afficher, pour ne
+ * pas annoncer un oubli qui vient d'être réparé. Si la lecture échoue, on
+ * affiche quand même un rappel prudent — mieux vaut un rappel de trop qu'un
+ * oubli. */
+
+var CFG_URL = "config.js";
+
+function todayIn(tz) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit"
+  }).format(new Date());
+}
+
+async function vitaminesDonneesAujourdhui() {
+  var src = await (await fetch(CFG_URL, { cache: "no-store" })).text();
+  var url = (src.match(/SUPABASE_URL:\s*"([^"]*)"/) || [])[1];
+  var key = (src.match(/SUPABASE_ANON_KEY:\s*"([^"]*)"/) || [])[1];
+  var foyer = (src.match(/FOYER:\s*"([^"]*)"/) || [])[1] || "foyer";
+  if (!url || !key) return null;
+
+  var day = todayIn("Europe/Paris");
+  var r = await fetch(
+    url.replace(/\/+$/, "") + "/rest/v1/chez_nous_events?household=eq." +
+    encodeURIComponent(foyer) + "&task_id=eq.vitamines&at=like." +
+    encodeURIComponent(day) + "*&select=id&limit=1",
+    { headers: { apikey: key, Authorization: "Bearer " + key } }
+  );
+  if (!r.ok) return null;
+  return (await r.json()).length > 0;
+}
+
+self.addEventListener("push", function (event) {
+  event.waitUntil((async function () {
+    var done = null;
+    try { done = await vitaminesDonneesAujourdhui(); } catch (e) {}
+    if (done === true) return;   /* quelqu'un les a données entre-temps */
+
+    await self.registration.showNotification("Vitamines de Sacha", {
+      body: done === null
+        ? "Pas de trace des vitamines aujourd’hui."
+        : "Personne ne les a notées aujourd’hui.",
+      icon: "icon-192.png",
+      badge: "icon-192.png",
+      tag: "rappel-vitamines",
+      renotify: false,
+      data: { url: "./" }
+    });
+  })());
+});
+
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true })
+    .then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        if ("focus" in list[i]) return list[i].focus();
+      }
+      return self.clients.openWindow("./");
+    }));
 });

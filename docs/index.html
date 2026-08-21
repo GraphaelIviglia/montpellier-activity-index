@@ -527,6 +527,9 @@
   }
   .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
+  .push-lead { margin: 0 0 12px; font-size: 14px; color: var(--ink-2); }
+  .push-lead .on { color: var(--good); font-weight: 600; }
+
   /* ---------- install ---------- */
   .install p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
   .install ol { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink-2); }
@@ -870,6 +873,16 @@
       <textarea id="data-box" spellcheck="false" aria-label="Données au format JSON"></textarea>
       <p class="err" id="tool-msg" role="status"></p>
     </details>
+  </section>
+
+  <!-- ============ RAPPEL ============ -->
+  <section class="card hidden" id="push-card">
+    <h2>Rappel des vitamines</h2>
+    <p class="push-lead" id="push-lead"></p>
+    <div class="row">
+      <button class="btn" type="button" id="push-on" hidden>Activer le rappel</button>
+      <button class="btn ghost small" type="button" id="push-off" hidden>Désactiver</button>
+    </div>
   </section>
 
   <!-- ============ INSTALL ============ -->
@@ -1976,6 +1989,8 @@
     show(heroCard, hasProfile && baby);
     show($("care-card"), known && (baby ? hasProfile : true));
     show($("stock-card"), known && !baby);
+    if (!known || !baby) show($("push-card"), false);
+    else if (PUSH_READY) currentSub().then(renderPush);
     show($("log-card"), known && (baby ? hasProfile : true));
     show(chartCard, hasProfile && baby);
     show(addCard, hasProfile && baby);
@@ -2646,11 +2661,112 @@
     window.addEventListener("online", function () { flush(); pull(); });
   }
 
+  /* ================= rappel des vitamines ================= */
+
+  /* Un téléphone dont l'app est fermée ne se réveille pas seul : c'est le
+     serveur qui le pousse, une fois par jour. Ici on ne fait que demander
+     l'autorisation et déposer l'abonnement là où le serveur ira le lire. */
+
+  var VAPID = CFG.VAPID_PUBLIC_KEY || "";
+  var PUSH_READY = SHARED && !!VAPID &&
+    "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+  function b64ToBytes(base64) {
+    var pad = "=".repeat((4 - (base64.length % 4)) % 4);
+    var raw = window.atob((base64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function subKey(sub, name) {
+    var raw = sub.getKey(name);
+    return window.btoa(String.fromCharCode.apply(null, new Uint8Array(raw)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function currentSub() {
+    if (!PUSH_READY) return Promise.resolve(null);
+    return navigator.serviceWorker.ready
+      .then(function (reg) { return reg.pushManager.getSubscription(); })
+      .catch(function () { return null; });
+  }
+
+  function renderPush(sub) {
+    var card = $("push-card"), lead = $("push-lead");
+    if (!PUSH_READY) {
+      show(card, false);
+      return;
+    }
+    show(card, true);
+    var denied = window.Notification.permission === "denied";
+    show($("push-on"), false); show($("push-off"), false);
+
+    if (denied) {
+      lead.innerHTML = "Les notifications sont refusées pour ce site. " +
+        "Il faut les réautoriser dans les réglages du téléphone pour recevoir le rappel.";
+      return;
+    }
+    if (sub) {
+      lead.innerHTML = '<span class="on">Rappel actif sur cet appareil.</span> ' +
+        "Si personne n’a noté les vitamines de Sacha à 16 h, le téléphone le signale.";
+      $("push-off").hidden = false;
+      return;
+    }
+    lead.innerHTML = "Si personne n’a noté les vitamines de Sacha à 16 h, " +
+      "ce téléphone peut te le signaler. À activer sur chaque appareil qui doit être prévenu.";
+    $("push-on").hidden = false;
+  }
+
+  $("push-on").addEventListener("click", function () {
+    window.Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") { renderPush(null); return; }
+      return navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: b64ToBytes(VAPID)
+        });
+      }).then(function (sub) {
+        return rest("chez_nous_push?on_conflict=endpoint", {
+          method: "POST", prefer: "resolution=merge-duplicates,return=minimal",
+          body: [{
+            endpoint: sub.endpoint, household: FOYER,
+            p256dh: subKey(sub, "p256dh"), auth: subKey(sub, "auth")
+          }]
+        }).then(function () {
+          renderPush(sub);
+          toast("Rappel activé sur cet appareil.");
+        });
+      });
+    }).catch(function (e) {
+      $("push-lead").textContent = "Le rappel n’a pas pu être activé : " + String(e.message || e);
+    });
+  });
+
+  $("push-off").addEventListener("click", function () {
+    currentSub().then(function (sub) {
+      if (!sub) { renderPush(null); return; }
+      var endpoint = sub.endpoint;
+      return sub.unsubscribe().then(function () {
+        return rest("chez_nous_push?endpoint=eq." + encodeURIComponent(endpoint), { method: "DELETE" });
+      }).then(function () {
+        renderPush(null);
+        toast("Rappel désactivé sur cet appareil.");
+      });
+    }).catch(function () { renderPush(null); });
+  });
+
+  function startPush() {
+    if (!PUSH_READY) { show($("push-card"), false); return; }
+    currentSub().then(renderPush);
+  }
+
   /* ================= boot ================= */
   memoryOnly = !storageWorks();
   load();
   render();
   startSync();
+  startPush();
   if (me) setupInstallCard();
 })();
 </script>
