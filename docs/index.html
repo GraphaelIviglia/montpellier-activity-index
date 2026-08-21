@@ -126,29 +126,21 @@
 
   /* ---------- switcher ---------- */
   .switcher { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
-  .sw-btn {
-    font-family: var(--sans); font-size: 15px; font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--ink-2);
-    cursor: pointer;
-    display: inline-flex; align-items: center; gap: 7px;
-  }
-  .sw-btn[aria-pressed="true"] {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
-  }
-  .sw-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .sw-btn .sub {
-    font-family: var(--mono); font-size: 11px; font-weight: 500; opacity: .75;
-  }
   .sw-label {
     font-family: var(--mono); font-size: 11px; text-transform: uppercase;
     letter-spacing: .07em; color: var(--muted); align-self: center; margin-right: 2px;
   }
+  .sw-me {
+    font-family: var(--sans); font-size: 15px; font-weight: 700;
+    color: var(--ink); align-self: center;
+  }
+  .sw-change {
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .07em;
+    background: none; border: 0; padding: 4px 2px; margin-left: auto;
+    color: var(--muted); text-decoration: underline; cursor: pointer;
+  }
+  .sw-change:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ---------- qui es-tu ---------- */
   .who p { margin: 0 0 14px; font-size: 14.5px; color: var(--ink-2); }
@@ -382,6 +374,7 @@
   .admin-row select { flex: 0 1 auto; width: auto; font-size: 14px; padding: 6px 8px; }
 
   .wrap-seg { flex-wrap: wrap; margin-bottom: 4px; }
+  .day-chips { align-self: flex-start; margin-bottom: 2px; }
 
   /* ---------- couches ---------- */
   .dc-last { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
@@ -645,7 +638,7 @@
     <h2>Qui tient le carnet ?</h2>
     <p>Chaque pesée, chaque change et chaque vitamine gardera ton prénom&nbsp;: on saura qui a fait quoi, et qui a déjà donné les vitamines aujourd’hui.</p>
     <div class="who-buttons" id="who-buttons"></div>
-    <p class="who-note">Le choix est retenu sur cet appareil. Il se change en un geste depuis le haut de l’écran.</p>
+    <p class="who-note">Le choix est retenu sur cet appareil et ne bouge plus : chacun reste sur son prénom. Pour le changer malgré tout, « Changer » en haut de l’écran.</p>
   </section>
 
   <!-- ============ SETUP (première visite) ============ -->
@@ -744,6 +737,11 @@
         <div class="row">
           <div class="field">
             <label for="l-at">Quand</label>
+            <div class="seg day-chips" id="l-days" role="group" aria-label="Choisir le jour">
+              <button type="button" data-days="0">Aujourd’hui</button>
+              <button type="button" data-days="1">Hier</button>
+              <button type="button" data-days="2">Avant-hier</button>
+            </div>
             <input id="l-at" type="datetime-local" required />
           </div>
         </div>
@@ -1309,6 +1307,16 @@
     try { window.localStorage.setItem(ME_KEY, name); } catch (e) {}
   }
 
+  /* On efface aussi la clé de l'ancienne version, sinon elle ressusciterait
+     le prénom au prochain chargement. */
+  function forgetMe() {
+    me = null;
+    try {
+      window.localStorage.removeItem(ME_KEY);
+      window.localStorage.removeItem("carnet-de-bebe/moi");
+    } catch (e) {}
+  }
+
   /* Measurements sorted by date, birth weight always first. */
   function series() {
     var out = A().entries.slice();
@@ -1358,9 +1366,15 @@
     }).join("");
   }
 
+  /* Une fois le prénom choisi, il est figé : un appareil appartient à
+     quelqu'un, et deux boutons côte à côte en haut de l'écran s'échangeaient
+     par mégarde — une couche notée au nom de l'autre. Le nom s'affiche donc
+     en clair, et changer d'utilisateur passe par une action explicite. */
   function renderSwitcher() {
     $("switcher").innerHTML = me
-      ? '<span class="sw-label">Carnet tenu par</span>' + userButtons("sw-btn")
+      ? '<span class="sw-label">Carnet tenu par</span>' +
+        '<span class="sw-me">' + esc(me) + '</span>' +
+        '<button class="sw-change" type="button" id="sw-change">Changer</button>'
       : "";
     $("who-buttons").innerHTML = userButtons("btn who-btn");
   }
@@ -1373,7 +1387,16 @@
     setupInstallCard();
   }
 
-  $("switcher").addEventListener("click", pickUser);
+  $("switcher").addEventListener("click", function (ev) {
+    if (!ev.target.closest("#sw-change")) return;
+    if (!window.confirm(
+      "Ce carnet est tenu par " + me + " sur cet appareil.\n\n" +
+      "Changer de personne ? Ce qui a déjà été noté garde son prénom."
+    )) return;
+    forgetMe();
+    render();
+    setupInstallCard();
+  });
   $("who-buttons").addEventListener("click", pickUser);
 
   /* Every record keeps the name that was active when it was made, so renaming
@@ -1743,6 +1766,39 @@
 
   /* ---------- rattraper un oubli ---------- */
 
+  /* Le jour d'un oubli est presque toujours hier ou avant-hier : autant
+     l'atteindre d'un appui, plutôt que d'ouvrir le calendrier pour ça. */
+  function dayShift(n) {
+    var d = new Date();
+    d.setDate(d.getDate() - n);
+    return toISO(d);
+  }
+
+  function timePart() {
+    var v = $("l-at").value;
+    if (v && v.indexOf("T") > 0) return v.split("T")[1].slice(0, 5);
+    return nowLocal().split("T")[1];
+  }
+
+  function renderDayChips() {
+    var day = ($("l-at").value || "").slice(0, 10);
+    Array.prototype.forEach.call($("l-days").querySelectorAll("button[data-days]"), function (b) {
+      var match = day === dayShift(+b.getAttribute("data-days"));
+      b.setAttribute("aria-pressed", match ? "true" : "false");
+    });
+  }
+
+  $("l-days").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-days]");
+    if (!btn) return;
+    /* On garde l'heure déjà saisie : le jour se choisit vite, l'heure se règle. */
+    $("l-at").value = dayShift(+btn.getAttribute("data-days")) + "T" + timePart();
+    $("late-err").textContent = "";
+    renderDayChips();
+  });
+
+  $("l-at").addEventListener("change", renderDayChips);
+
   function renderLate() {
     var here = scopeTasks(tab);
     var sel = $("l-task");
@@ -1753,6 +1809,7 @@
     if (keep && here.filter(function (t) { return t.id === keep; }).length) sel.value = keep;
     renderLateVariants();
     if (!$("l-at").value) $("l-at").value = nowLocal();
+    renderDayChips();
   }
 
   function renderLateVariants() {
