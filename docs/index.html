@@ -382,6 +382,7 @@
   .admin-row select { flex: 0 1 auto; width: auto; font-size: 14px; padding: 6px 8px; }
 
   .wrap-seg { flex-wrap: wrap; margin-bottom: 4px; }
+  .day-chips { align-self: flex-start; margin-bottom: 2px; }
 
   /* ---------- couches ---------- */
   .dc-last { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
@@ -744,6 +745,11 @@
         <div class="row">
           <div class="field">
             <label for="l-at">Quand</label>
+            <div class="seg day-chips" id="l-days" role="group" aria-label="Choisir le jour">
+              <button type="button" data-days="0">Aujourd’hui</button>
+              <button type="button" data-days="1">Hier</button>
+              <button type="button" data-days="2">Avant-hier</button>
+            </div>
             <input id="l-at" type="datetime-local" required />
           </div>
         </div>
@@ -1743,6 +1749,39 @@
 
   /* ---------- rattraper un oubli ---------- */
 
+  /* Le jour d'un oubli est presque toujours hier ou avant-hier : autant
+     l'atteindre d'un appui, plutôt que d'ouvrir le calendrier pour ça. */
+  function dayShift(n) {
+    var d = new Date();
+    d.setDate(d.getDate() - n);
+    return toISO(d);
+  }
+
+  function timePart() {
+    var v = $("l-at").value;
+    if (v && v.indexOf("T") > 0) return v.split("T")[1].slice(0, 5);
+    return nowLocal().split("T")[1];
+  }
+
+  function renderDayChips() {
+    var day = ($("l-at").value || "").slice(0, 10);
+    Array.prototype.forEach.call($("l-days").querySelectorAll("button[data-days]"), function (b) {
+      var match = day === dayShift(+b.getAttribute("data-days"));
+      b.setAttribute("aria-pressed", match ? "true" : "false");
+    });
+  }
+
+  $("l-days").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-days]");
+    if (!btn) return;
+    /* On garde l'heure déjà saisie : le jour se choisit vite, l'heure se règle. */
+    $("l-at").value = dayShift(+btn.getAttribute("data-days")) + "T" + timePart();
+    $("late-err").textContent = "";
+    renderDayChips();
+  });
+
+  $("l-at").addEventListener("change", renderDayChips);
+
   function renderLate() {
     var here = scopeTasks(tab);
     var sel = $("l-task");
@@ -1753,6 +1792,7 @@
     if (keep && here.filter(function (t) { return t.id === keep; }).length) sel.value = keep;
     renderLateVariants();
     if (!$("l-at").value) $("l-at").value = nowLocal();
+    renderDayChips();
   }
 
   function renderLateVariants() {
