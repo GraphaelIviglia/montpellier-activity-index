@@ -24,9 +24,11 @@ retard, visible depuis l'autre onglet.
 **Qui tient le carnet**
 
 À la première ouverture l'app demande qui utilise l'appareil — Fleur ou Raph — et
-chaque geste noté ensuite porte ce prénom. Le choix est retenu sur l'appareil,
-sous sa propre clé, et se change en un geste. Les enregistrements gardent le nom
-qui était actif au moment du geste.
+chaque geste noté ensuite porte ce prénom. Le choix est ensuite verrouillé : le
+haut de l'écran affiche le prénom en clair, pas deux boutons qu'un pouce
+échange par mégarde. Un appareil appartient à quelqu'un. « Changer » et une
+confirmation ramènent la question, pour un téléphone qui change de mains. Les
+enregistrements gardent le nom qui était actif au moment du geste.
 
 **Tâches**
 
