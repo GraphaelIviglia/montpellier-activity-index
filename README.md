@@ -39,6 +39,16 @@ qui était actif au moment du geste.
 - une tâche en retard dit **de combien** et allume le badge de son onglet ; une
   tâche déjà faite dans son rythme demande confirmation avant un doublon.
 
+**Stocks** (onglet Maison)
+
+- deux catégories, Nettoyage et Alimentaire, avec quelques articles pour démarrer ;
+- trois états — en stock, bientôt fini, à racheter — que l'on fait tourner d'un
+  seul appui, comme le reste de l'app ;
+- l'article retient qui a signalé le changement et quand, sans encombrer
+  l'historique des soins, qui reste consacré aux gestes ;
+- ce qui est à racheter compte dans le badge de l'onglet Maison : un placard vide
+  demande autant d'attention qu'une tâche en retard.
+
 **Qui a fait quoi**
 
 Un historique par onglet, du plus récent au plus ancien : la tâche, sa variante,

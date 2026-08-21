@@ -32,6 +32,7 @@
     --caca:      #96603a;
     --good:      #1b6b3a;
     --warn:      #8a5a06;
+    --danger:    #a13b28;
     --shadow:    0 1px 2px rgba(15, 28, 24, .06), 0 8px 24px -12px rgba(15, 28, 24, .18);
 
     --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -58,6 +59,7 @@
       --caca:      #b8825a;
       --good:      #5cc47f;
       --warn:      #d0a049;
+      --danger:    #e3796b;
       --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
     }
   }
@@ -81,6 +83,7 @@
     --caca:      #b8825a;
     --good:      #5cc47f;
     --warn:      #d0a049;
+    --danger:    #e3796b;
     --shadow:    0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
   }
 
@@ -289,6 +292,50 @@
     font-family: var(--mono); font-size: 11px; font-weight: 600;
   }
   .tab[aria-selected="true"] .badge { background: var(--on-accent); color: var(--accent); }
+
+  /* ---------- stocks ---------- */
+  .stock-count { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .stock-count .todo { color: var(--danger); font-weight: 600; }
+  .stock-cat {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted);
+    margin: 14px 0 7px;
+  }
+  .stock-cat:first-child { margin-top: 0; }
+  .stock-items { display: flex; flex-direction: column; gap: 6px; }
+  .stock {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left;
+    font-family: var(--sans); font-size: 15.5px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .stock:hover { border-color: var(--accent); background: var(--surface); }
+  .stock:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .stock .k-name { flex: 1 1 auto; font-weight: 560; min-width: 0; }
+  .stock .k-who {
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%;
+  }
+  .k-pill {
+    flex: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface);
+    white-space: nowrap;
+  }
+  .k-pill i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .k-pill.ok   { color: var(--good);   border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .k-pill.ok i { background: var(--good); }
+  .k-pill.low  { color: var(--warn);   border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  .k-pill.low i { background: var(--warn); }
+  .k-pill.out  { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+  .k-pill.out i { background: var(--danger); }
 
   /* ---------- soins ---------- */
   .tasks { display: flex; flex-direction: column; gap: 8px; }
@@ -700,6 +747,39 @@
     </details>
   </section>
 
+  <!-- ============ STOCKS ============ -->
+  <section class="card hidden" id="stock-card">
+    <div class="chart-head">
+      <h2 style="margin:0">Stocks</h2>
+      <span class="stock-count" id="stock-count"></span>
+    </div>
+    <div id="stock-list"></div>
+
+    <details class="tools" id="stock-tools">
+      <summary>Gérer les stocks</summary>
+      <form id="stock-form">
+        <div class="row" style="margin-top: 12px;">
+          <div class="field" style="flex: 2 1 160px;">
+            <label for="k-name">Nouvel article</label>
+            <input id="k-name" type="text" autocomplete="off" placeholder="Lessive, café, couches…" />
+          </div>
+          <div class="field">
+            <label for="k-cat">Catégorie</label>
+            <select id="k-cat">
+              <option value="nettoyage">Nettoyage</option>
+              <option value="alimentaire">Alimentaire</option>
+            </select>
+          </div>
+        </div>
+        <p class="err" id="stock-err" role="alert"></p>
+        <div class="row">
+          <button class="btn small" type="submit">Ajouter l’article</button>
+        </div>
+      </form>
+      <div id="stock-admin"></div>
+    </details>
+  </section>
+
   <!-- ============ HISTORIQUE DES SOINS ============ -->
   <section class="card hidden" id="log-card">
     <h2>Qui a fait quoi</h2>
@@ -1018,9 +1098,26 @@
     ];
   }
 
+  var STOCK_CATS = [
+    { id: "nettoyage",   label: "Nettoyage" },
+    { id: "alimentaire", label: "Alimentaire" }
+  ];
+
+  function seedStocks() {
+    return [
+      { id: "s1", cat: "nettoyage",   name: "Lessive",           level: "ok" },
+      { id: "s2", cat: "nettoyage",   name: "Liquide vaisselle", level: "ok" },
+      { id: "s3", cat: "nettoyage",   name: "Sacs poubelle",     level: "ok" },
+      { id: "s4", cat: "alimentaire", name: "Café",              level: "ok" },
+      { id: "s5", cat: "alimentaire", name: "Lait",              level: "ok" },
+      { id: "s6", cat: "alimentaire", name: "Pâtes",             level: "ok" }
+    ];
+  }
+
   var db = {
     baby: { name: "Sacha", sex: "f", birthDate: null, birthWeight: null, entries: [] },
     tasks: seedTasks(),
+    stocks: seedStocks(),
     events: [],
     users: ["Fleur", "Raph"]
   };
@@ -1103,6 +1200,7 @@
       if (adopted) {
         db.baby = adopted;
         if (parsed && Array.isArray(parsed.users) && parsed.users.length === 2) db.users = parsed.users;
+        if (parsed && Array.isArray(parsed.stocks)) db.stocks = parsed.stocks;
         if (parsed && Array.isArray(parsed.tasks) && parsed.tasks.length) {
           db.tasks = parsed.tasks.map(function (t) {
             if (!t.scope) t.scope = "sacha";
@@ -1394,9 +1492,11 @@
   }
 
   function lateCount(scope) {
-    return scopeTasks(scope).filter(function (t) {
+    var late = scopeTasks(scope).filter(function (t) {
       return t.freq && t.freq.everyH && taskStatus(t).state === "due";
     }).length;
+    /* A cupboard that is empty needs attention just as much as a late task. */
+    return scope === "maison" ? late + toBuyCount() : late;
   }
 
   function renderTabs() {
@@ -1674,6 +1774,117 @@
     toast("Tâche « " + name + " » ajoutée.");
   });
 
+  /* ---------- stocks ---------- */
+
+  /* Three states, one tap to move between them. The person and the moment are
+     kept on the article itself: what matters is qui a signalé quoi, and the
+     soins log stays about gestes, not about the cupboard. */
+  var LEVELS = [
+    { id: "ok",  label: "en stock" },
+    { id: "low", label: "bientôt fini" },
+    { id: "out", label: "à racheter" }
+  ];
+
+  function levelLabel(id) {
+    for (var i = 0; i < LEVELS.length; i++) if (LEVELS[i].id === id) return LEVELS[i].label;
+    return "en stock";
+  }
+  function nextLevel(id) {
+    for (var i = 0; i < LEVELS.length; i++) if (LEVELS[i].id === id) return LEVELS[(i + 1) % LEVELS.length].id;
+    return "low";
+  }
+
+  function stocksOf(cat) {
+    return db.stocks.filter(function (k) { return k.cat === cat; });
+  }
+  function toBuyCount() {
+    return db.stocks.filter(function (k) { return k.level === "out"; }).length;
+  }
+
+  function renderStocks() {
+    var out = toBuyCount();
+    var low = db.stocks.filter(function (k) { return k.level === "low"; }).length;
+    $("stock-count").innerHTML = out
+      ? '<span class="todo">' + out + " à racheter</span>" + (low ? " · " + low + " bientôt fini" : "")
+      : (low ? low + " bientôt fini" : db.stocks.length + " article" + (db.stocks.length > 1 ? "s" : "") + " · rien à racheter");
+
+    $("stock-list").innerHTML = STOCK_CATS.map(function (c) {
+      var items = stocksOf(c.id);
+      if (!items.length) return "";
+      return '<p class="stock-cat">' + esc(c.label) + "</p>" +
+        '<div class="stock-items">' + items.map(function (k) {
+          var who = k.by && k.at
+            ? esc(byLabel(k.by) || "") + " · " + sinceLabel(Math.max(0, Math.floor((new Date() - parseLocal(k.at)) / 60000)))
+            : "";
+          return '<button class="stock" type="button" data-stock="' + esc(k.id) + '">' +
+            '<span class="k-name">' + esc(k.name) + "</span>" +
+            (who ? '<span class="k-who">' + who + "</span>" : "") +
+            '<span class="k-pill ' + k.level + '"><i></i>' + levelLabel(k.level) + "</span>" +
+            "</button>";
+        }).join("") + "</div>";
+    }).join("");
+  }
+
+  $("stock-list").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-stock]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-stock");
+    var item = db.stocks.filter(function (k) { return k.id === id; })[0];
+    if (!item) return;
+    item.level = nextLevel(item.level);
+    item.by = stamp();
+    item.at = nowLocal();
+    save();
+    renderStocks();
+    renderTabs();
+    toast(item.name + " · " + levelLabel(item.level) + ".");
+  });
+
+  function renderStockAdmin() {
+    $("stock-admin").innerHTML = db.stocks.length
+      ? db.stocks.map(function (k) {
+          var cat = STOCK_CATS.filter(function (c) { return c.id === k.cat; })[0];
+          return '<div class="admin-row">' +
+            '<span class="a-name">' + esc(k.name) + "</span>" +
+            '<span class="t-chip">' + esc(cat ? cat.label : k.cat) + "</span>" +
+            '<button class="del" type="button" data-delk="' + esc(k.id) +
+              '" aria-label="Supprimer ' + esc(k.name) + '">×</button>' +
+            "</div>";
+        }).join("")
+      : '<p class="empty" style="margin-top:12px">Aucun article suivi.</p>';
+  }
+
+  $("stock-admin").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-delk]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-delk");
+    db.stocks = db.stocks.filter(function (k) { return k.id !== id; });
+    save();
+    renderStocks(); renderStockAdmin(); renderTabs();
+  });
+
+  $("stock-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var name = $("k-name").value.trim();
+    var err = $("stock-err");
+    if (!name) { err.textContent = "Donne un nom à l’article."; return; }
+    for (var i = 0; i < db.stocks.length; i++) {
+      if (db.stocks[i].name.toLowerCase() === name.toLowerCase()) {
+        err.textContent = "Cet article est déjà suivi.";
+        return;
+      }
+    }
+    err.textContent = "";
+    db.stocks.push({
+      id: "k" + Math.round(Math.random() * 1e9).toString(36) + db.stocks.length,
+      cat: $("k-cat").value, name: name, level: "ok"
+    });
+    save();
+    $("k-name").value = "";
+    renderStocks(); renderStockAdmin(); renderTabs();
+    toast("« " + name + " » ajouté aux stocks.");
+  });
+
   /* ---------- qui a fait quoi ---------- */
 
   var logFilter = "";
@@ -1764,6 +1975,7 @@
     show(setupCard, known && baby && !hasProfile);
     show(heroCard, hasProfile && baby);
     show($("care-card"), known && (baby ? hasProfile : true));
+    show($("stock-card"), known && !baby);
     show($("log-card"), known && (baby ? hasProfile : true));
     show(chartCard, hasProfile && baby);
     show(addCard, hasProfile && baby);
@@ -1780,6 +1992,8 @@
     if (!baby) {
       renderCare();
       renderTaskAdmin();
+      renderStocks();
+      renderStockAdmin();
       renderLog();
       return;
     }
@@ -2341,6 +2555,7 @@
         if (Array.isArray(doc.tasks) && doc.tasks.length) {
           db.tasks = doc.tasks.map(function (t) { if (!t.scope) t.scope = "sacha"; return t; });
         }
+        if (Array.isArray(doc.stocks)) db.stocks = doc.stocks;
       }
       db.events = (res[1] || []).map(function (r) {
         return { id: r.id, taskId: r.task_id, at: r.at, by: r.by_name, variant: r.variant };
@@ -2370,7 +2585,7 @@
   }
 
   function pushState() {
-    enqueue({ kind: "state", data: { baby: db.baby, users: db.users, tasks: db.tasks } });
+    enqueue({ kind: "state", data: { baby: db.baby, users: db.users, tasks: db.tasks, stocks: db.stocks } });
   }
 
   /* Not-shared and cannot-reach are both states the household needs to see
