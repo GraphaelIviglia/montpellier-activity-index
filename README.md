@@ -36,6 +36,8 @@ qui était actif au moment du geste.
   caca, les deux — demandent laquelle avant d'enregistrer ;
 - fréquence de deux natures : « N fois par jour », qui affiche le compte du jour,
   ou « toutes les X heures », de 3 heures à 6 mois, qui affiche l'échéance ;
+- « Noter après coup » rattrape un oubli à sa vraie date : le bain d'hier se note
+  aujourd'hui, à hier soir, et vient se ranger au bon endroit de l'historique ;
 - une tâche en retard dit **de combien** et allume le badge de son onglet ; une
   tâche déjà faite dans son rythme demande confirmation avant un doublon.
 
