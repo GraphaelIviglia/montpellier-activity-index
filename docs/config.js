@@ -11,7 +11,7 @@
  * partager le même projet Supabase sans se voir.
  */
 window.CHEZ_NOUS = {
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://ddqvqnsrsxjlntabbnwb.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkcXZxbnNyc3hqbG50YWJibndiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODA4NzYsImV4cCI6MjA5ODA1Njg3Nn0.nNFWppTao7C8azJvMeBRHOiPGKGNSz7mued2Sgxfm8Y",
   FOYER: "fleur-raph"
 };
