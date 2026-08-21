@@ -37,3 +37,9 @@ Un état négatif doit être visible **à l'écran**, jamais rangé dans un pann
 replié. Trois fois de suite, un problème a été invisible pour cette raison :
 stockage refusé par le navigateur, carnet non partagé, liaison serveur perdue.
 Une app qui échoue en silence ressemble à une app qui marche.
+
+Deux mécanismes de visibilité coexistaient sur les mêmes boutons : la classe
+`hidden`, qui porte le `display: none`, et l'attribut `hidden`. Effacer l'un
+laissait l'autre en place, et le bouton restait invisible pour toujours. Un
+test vérifiait l'attribut, donc il passait. **Vérifier ce que l'œil voit** —
+`isVisible()`, une taille non nulle — jamais l'état d'un attribut.
