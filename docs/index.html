@@ -880,8 +880,8 @@
     <h2>Rappel des vitamines</h2>
     <p class="push-lead" id="push-lead"></p>
     <div class="row">
-      <button class="btn" type="button" id="push-on" hidden>Activer le rappel</button>
-      <button class="btn ghost small" type="button" id="push-off" hidden>Désactiver</button>
+      <button class="btn hidden" type="button" id="push-on">Activer le rappel</button>
+      <button class="btn ghost small hidden" type="button" id="push-off">Désactiver</button>
     </div>
   </section>
 
@@ -2710,12 +2710,12 @@
     if (sub) {
       lead.innerHTML = '<span class="on">Rappel actif sur cet appareil.</span> ' +
         "Si personne n’a noté les vitamines de Sacha à 16 h, le téléphone le signale.";
-      $("push-off").hidden = false;
+      show($("push-off"), true);
       return;
     }
     lead.innerHTML = "Si personne n’a noté les vitamines de Sacha à 16 h, " +
       "ce téléphone peut te le signaler. À activer sur chaque appareil qui doit être prévenu.";
-    $("push-on").hidden = false;
+    show($("push-on"), true);
   }
 
   $("push-on").addEventListener("click", function () {
