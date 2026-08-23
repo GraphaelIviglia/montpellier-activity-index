@@ -285,6 +285,30 @@
   }
   .tab[aria-selected="true"] .badge { background: var(--on-accent); color: var(--accent); }
 
+  /* ---------- liste de courses ---------- */
+  .shop-items { display: flex; flex-direction: column; gap: 6px; }
+  .shop {
+    display: flex; align-items: center; gap: 11px;
+    width: 100%; text-align: left;
+    font-family: var(--sans); font-size: 15.5px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .shop:hover { border-color: var(--accent); background: var(--surface); }
+  .shop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .shop .box {
+    flex: none; width: 20px; height: 20px; border-radius: 6px;
+    border: 1.5px solid var(--line); background: var(--surface);
+  }
+  .shop:hover .box { border-color: var(--accent); }
+  .shop .s-name { flex: 1 1 auto; font-weight: 560; min-width: 0; }
+  .shop.low .s-name { font-weight: 500; color: var(--ink-2); }
+  .shop-actions { margin-top: 14px; }
+
   /* ---------- stocks ---------- */
   .stock-count { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
   .stock-count .todo { color: var(--danger); font-weight: 600; }
@@ -772,6 +796,18 @@
         </div>
       </form>
     </details>
+  </section>
+
+  <!-- ============ LISTE DE COURSES ============ -->
+  <section class="card hidden" id="shop-card">
+    <div class="chart-head">
+      <h2 style="margin:0">Liste de courses</h2>
+      <span class="stock-count" id="shop-count"></span>
+    </div>
+    <div id="shop-list"></div>
+    <div class="row shop-actions hidden" id="shop-actions">
+      <button class="btn ghost small" type="button" id="shop-share">Partager la liste</button>
+    </div>
   </section>
 
   <!-- ============ STOCKS ============ -->
@@ -1978,8 +2014,99 @@
     item.at = nowLocal();
     save();
     renderStocks();
+    renderShop();
     renderTabs();
     toast(item.name + " · " + levelLabel(item.level) + ".");
+  });
+
+  /* ---------- liste de courses ----------
+   *
+   * Rien à saisir ici : la liste est ce que les stocks disent déjà. Tout ce
+   * qui n'est pas « en stock » y figure, groupé par catégorie comme les rayons
+   * du magasin, ce qui manque avant ce qui va manquer. Cocher un article, au
+   * retour des courses, c'est le remettre en stock — la liste se vide d'elle-
+   * même et le placard est à jour sans second geste. */
+
+  function shopList() {
+    return STOCK_CATS.map(function (c) {
+      var items = stocksOf(c.id).filter(function (k) { return k.level !== "ok"; });
+      /* ce qui manque d'abord, ce qui va manquer ensuite */
+      items.sort(function (a, b) {
+        if (a.level === b.level) return 0;
+        return a.level === "out" ? -1 : 1;
+      });
+      return { cat: c, items: items };
+    }).filter(function (g) { return g.items.length; });
+  }
+
+  function renderShop() {
+    var groups = shopList();
+    var out = toBuyCount();
+    var low = db.stocks.filter(function (k) { return k.level === "low"; }).length;
+    var n = out + low;
+
+    $("shop-count").innerHTML = n
+      ? (out ? '<span class="todo">' + out + " à racheter</span>" : "") +
+        (out && low ? " · " : "") +
+        (low ? low + " bientôt fini" : "")
+      : "rien à acheter";
+
+    $("shop-list").innerHTML = groups.length
+      ? groups.map(function (g) {
+          return '<p class="stock-cat">' + esc(g.cat.label) + "</p>" +
+            '<div class="shop-items">' + g.items.map(function (k) {
+              return '<button class="shop ' + k.level + '" type="button" data-buy="' + esc(k.id) + '"' +
+                ' aria-label="' + esc(k.name) + ' — cocher comme acheté">' +
+                '<span class="box" aria-hidden="true"></span>' +
+                '<span class="s-name">' + esc(k.name) + "</span>" +
+                '<span class="k-pill ' + k.level + '"><i></i>' + levelLabel(k.level) + "</span>" +
+                "</button>";
+            }).join("") + "</div>";
+        }).join("")
+      : '<p class="empty">Rien à acheter : tous les placards sont pleins.</p>';
+
+    show($("shop-actions"), groups.length > 0);
+  }
+
+  /* Cocher = racheté : l'article repart « en stock », signé et daté. */
+  $("shop-list").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-buy]");
+    if (!btn) return;
+    var id = btn.getAttribute("data-buy");
+    var item = db.stocks.filter(function (k) { return k.id === id; })[0];
+    if (!item) return;
+    item.level = "ok";
+    item.by = stamp();
+    item.at = nowLocal();
+    save();
+    renderShop();
+    renderStocks();
+    renderTabs();
+    toast(item.name + " · racheté.");
+  });
+
+  function shopText() {
+    return "Courses — Chez nous\n" + shopList().map(function (g) {
+      return g.cat.label + "\n" + g.items.map(function (k) {
+        return "- " + k.name + (k.level === "low" ? " (bientôt fini)" : "");
+      }).join("\n");
+    }).join("\n\n");
+  }
+
+  /* Partager, sinon copier, sinon le dire : une liste qu'on croit envoyée et
+     qui ne l'est pas, c'est un placard vide de plus. */
+  $("shop-share").addEventListener("click", function () {
+    var text = shopText();
+    if (navigator.share) {
+      navigator.share({ title: "Liste de courses", text: text })
+        .catch(function () {});
+      return;
+    }
+    var copy = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(text)
+      : Promise.reject();
+    copy.then(function () { toast("Liste copiée."); })
+        .catch(function () { toast("Copie impossible sur cet appareil."); });
   });
 
   function renderStockAdmin() {
@@ -2002,7 +2129,7 @@
     var id = btn.getAttribute("data-delk");
     db.stocks = db.stocks.filter(function (k) { return k.id !== id; });
     save();
-    renderStocks(); renderStockAdmin(); renderTabs();
+    renderShop(); renderStocks(); renderStockAdmin(); renderTabs();
   });
 
   $("stock-form").addEventListener("submit", function (ev) {
@@ -2023,7 +2150,7 @@
     });
     save();
     $("k-name").value = "";
-    renderStocks(); renderStockAdmin(); renderTabs();
+    renderShop(); renderStocks(); renderStockAdmin(); renderTabs();
     toast("« " + name + " » ajouté aux stocks.");
   });
 
@@ -2117,6 +2244,7 @@
     show(setupCard, known && baby && !hasProfile);
     show(heroCard, hasProfile && baby);
     show($("care-card"), known && (baby ? hasProfile : true));
+    show($("shop-card"), known && !baby);
     show($("stock-card"), known && !baby);
     if (!known || !baby) show($("push-card"), false);
     else if (PUSH_READY) currentSub().then(renderPush);
@@ -2137,6 +2265,7 @@
       renderCare();
       renderTaskAdmin();
       renderLate();
+      renderShop();
       renderStocks();
       renderStockAdmin();
       renderLog();
