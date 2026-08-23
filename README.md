@@ -53,6 +53,15 @@ enregistrements gardent le nom qui était actif au moment du geste.
 - ce qui est à racheter compte dans le badge de l'onglet Maison : un placard vide
   demande autant d'attention qu'une tâche en retard.
 
+**Liste de courses** (onglet Maison)
+
+Rien à saisir : la liste est ce que les stocks disent déjà. Tout ce qui n'est
+pas « en stock » y figure, groupé par catégorie comme les rayons du magasin, ce
+qui manque avant ce qui va manquer. Cocher un article au retour des courses le
+remet en stock — la liste se vide d'elle-même et le placard est à jour sans
+second geste. « Partager la liste » l'envoie par le partage du téléphone, ou la
+copie quand celui-ci n'en a pas.
+
 **Qui a fait quoi**
 
 Un historique par onglet, du plus récent au plus ancien : la tâche, sa variante,
