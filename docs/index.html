@@ -307,7 +307,21 @@
   .shop:hover .box { border-color: var(--accent); }
   .shop .s-name { flex: 1 1 auto; font-weight: 560; min-width: 0; }
   .shop.low .s-name { font-weight: 500; color: var(--ink-2); }
-  .shop-actions { margin-top: 14px; }
+  .shop-actions { margin-top: 12px; gap: 8px; }
+  .shop-text {
+    width: 100%; margin-top: 16px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.55;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 13px;
+    resize: vertical;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .shop-text:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .shop-hint { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
 
   /* ---------- stocks ---------- */
   .stock-count { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
@@ -805,8 +819,14 @@
       <span class="stock-count" id="shop-count"></span>
     </div>
     <div id="shop-list"></div>
-    <div class="row shop-actions hidden" id="shop-actions">
-      <button class="btn ghost small" type="button" id="shop-share">Partager la liste</button>
+    <div class="hidden" id="shop-copy">
+      <textarea class="shop-text" id="shop-text" readonly rows="4"
+        aria-label="La liste en texte, à copier"></textarea>
+      <div class="row shop-actions">
+        <button class="btn ghost small" type="button" id="shop-copy-btn">Copier la liste</button>
+        <button class="btn ghost small hidden" type="button" id="shop-share">Partager</button>
+      </div>
+      <p class="shop-hint" id="shop-hint">À coller dans un message, une note, où tu veux.</p>
     </div>
   </section>
 
@@ -2065,7 +2085,15 @@
         }).join("")
       : '<p class="empty">Rien à acheter : tous les placards sont pleins.</p>';
 
-    show($("shop-actions"), groups.length > 0);
+    show($("shop-copy"), groups.length > 0);
+    if (groups.length) {
+      var text = shopText();
+      var ta = $("shop-text");
+      ta.value = text;
+      /* la zone montre la liste entière : rien d'utile ne doit rester caché
+         derrière un ascenseur */
+      ta.rows = Math.min(20, text.split("\n").length);
+    }
   }
 
   /* Cocher = racheté : l'article repart « en stock », signé et daté. */
@@ -2093,20 +2121,47 @@
     }).join("\n\n");
   }
 
-  /* Partager, sinon copier, sinon le dire : une liste qu'on croit envoyée et
-     qui ne l'est pas, c'est un placard vide de plus. */
-  $("shop-share").addEventListener("click", function () {
-    var text = shopText();
-    if (navigator.share) {
-      navigator.share({ title: "Liste de courses", text: text })
-        .catch(function () {});
+  /* La liste est écrite en clair, sélectionnable : même si le presse-papier
+     est refusé — navigation privée, page dans un cadre, permission niée — le
+     texte reste là, à prendre à la main. Une liste qu'on croit copiée et qui
+     ne l'est pas, c'est un placard vide de plus. */
+  $("shop-text").addEventListener("focus", function () { this.select(); });
+  $("shop-text").addEventListener("click", function () { this.select(); });
+
+  $("shop-copy-btn").addEventListener("click", function () {
+    var ta = $("shop-text");
+    var text = ta.value;
+    var done = function () { toast("Liste copiée."); };
+    var manual = function () {
+      ta.focus();
+      ta.select();
+      toast("Le texte est sélectionné : copie-le à la main.");
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () {
+        if (!legacyCopy(ta)) manual(); else done();
+      });
       return;
     }
-    var copy = navigator.clipboard && navigator.clipboard.writeText
-      ? navigator.clipboard.writeText(text)
-      : Promise.reject();
-    copy.then(function () { toast("Liste copiée."); })
-        .catch(function () { toast("Copie impossible sur cet appareil."); });
+    if (legacyCopy(ta)) done(); else manual();
+  });
+
+  function legacyCopy(ta) {
+    try {
+      ta.focus();
+      ta.select();
+      return document.execCommand("copy");
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* Le partage n'existe pas partout : on ne montre le bouton que s'il marche. */
+  if (navigator.share) show($("shop-share"), true);
+  $("shop-share").addEventListener("click", function () {
+    navigator.share({ title: "Liste de courses", text: $("shop-text").value })
+      .catch(function () {});
   });
 
   function renderStockAdmin() {
