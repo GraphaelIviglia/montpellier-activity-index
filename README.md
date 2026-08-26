@@ -59,8 +59,14 @@ Rien à saisir : la liste est ce que les stocks disent déjà. Tout ce qui n'est
 pas « en stock » y figure, groupé par catégorie comme les rayons du magasin, ce
 qui manque avant ce qui va manquer. Cocher un article au retour des courses le
 remet en stock — la liste se vide d'elle-même et le placard est à jour sans
-second geste. « Partager la liste » l'envoie par le partage du téléphone, ou la
-copie quand celui-ci n'en a pas.
+second geste.
+
+La liste s'écrit aussi en toutes lettres, dans une zone de texte sous les
+articles : un appui la sélectionne entièrement, « Copier la liste » la met dans
+le presse-papier, et « Partager » n'apparaît que si le téléphone sait partager.
+Le texte reste à l'écran même quand le presse-papier est refusé — navigation
+privée, page dans un cadre, permission niée : il y a toujours quelque chose à
+prendre à la main.
 
 **Qui a fait quoi**
 
