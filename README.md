@@ -68,6 +68,24 @@ Le texte reste à l'écran même quand le presse-papier est refusé — navigati
 privée, page dans un cadre, permission niée : il y a toujours quelque chose à
 prendre à la main.
 
+**Noisettes** (onglet Maison)
+
+Un minuteur pour la torréfaction, qui apprend au lieu de deviner.
+
+- on donne le poids, on choisit machine chaude ou machine froide, et l'app
+  propose un temps ;
+- ce temps vient des cuissons déjà mesurées : secondes par gramme d'après les
+  cuissons à chaud, plus le supplément constaté quand la machine part froide.
+  Tant qu'aucune mesure n'existe, l'app le dit au lieu d'inventer un chiffre ;
+- le minuteur compte vers le haut : il sonne au temps visé, mais continue, si
+  bien qu'on enregistre le temps réellement mis, pas celui qu'on visait ;
+- la sonnerie est un son, une vibration, et surtout un écran qui vire au rouge
+  et affiche « C'est prêt » — un son coupé ne doit pas laisser brûler ;
+- le temps se lit sur l'horloge, pas sur un compteur : une cuisson lancée
+  survit à l'app fermée ou au téléphone verrouillé ;
+- le temps visé se corrige à la main quand on sait mieux, et chaque mesure est
+  signée, datée, supprimable.
+
 **Qui a fait quoi**
 
 Un historique par onglet, du plus récent au plus ancien : la tâche, sa variante,
