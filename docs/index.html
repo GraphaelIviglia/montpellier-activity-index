@@ -431,6 +431,7 @@
   }
   .t-chip.due { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
   .t-chip.ok  { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+  .t-chip.wait { color: var(--muted); border-style: dashed; }
   .t-go { flex: none; font-size: 20px; font-weight: 600; color: var(--muted); line-height: 1; }
   .task:hover .t-go { color: var(--accent); }
 
@@ -443,6 +444,8 @@
   .admin-row:last-child { border-bottom: 0; }
   .admin-row .a-name { flex: 1 1 auto; font-size: 14.5px; font-weight: 550; }
   .admin-row select { flex: 0 1 auto; width: auto; font-size: 14px; padding: 6px 8px; }
+  .admin-row input[type="date"] { flex: 0 1 auto; width: auto; font-size: 13px; padding: 6px 8px; }
+  .admin-row { flex-wrap: wrap; }
 
   .wrap-seg { flex-wrap: wrap; margin-bottom: 4px; }
   .day-chips { align-self: flex-start; margin-bottom: 2px; }
@@ -646,6 +649,7 @@
   .del:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .empty { color: var(--muted); font-size: 14px; }
+  .hint { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
 
   @media (max-width: 500px) {
     th:nth-child(5), td:nth-child(5) { display: none; }
@@ -836,7 +840,12 @@
             <label for="t-freq">Fréquence</label>
             <select id="t-freq"></select>
           </div>
+          <div class="field">
+            <label for="t-start">Première fois le</label>
+            <input id="t-start" type="date" />
+          </div>
         </div>
+        <p class="hint">Laisse la date vide pour une tâche à faire dès maintenant.</p>
         <p class="err" id="task-err" role="alert"></p>
         <div class="row">
           <button class="btn small" type="submit">Ajouter la tâche</button>
@@ -1685,8 +1694,12 @@
   }
 
   function lateCount(scope) {
+    /* Les tâches « N fois par jour » sont dues toute la journée : elles ne
+       comptent pas. Tout le reste qui réclame compte — y compris un rappel
+       daté, sans fréquence, dont le jour est arrivé. */
     var late = scopeTasks(scope).filter(function (t) {
-      return t.freq && t.freq.everyH && taskStatus(t).state === "due";
+      if (t.freq && t.freq.perDay) return false;
+      return taskStatus(t).state === "due";
     }).length;
     /* A cupboard that is empty needs attention just as much as a late task. */
     return scope === "maison" ? late + toBuyCount() : late;
@@ -1781,21 +1794,44 @@
     var todayISO = toISO(now);
     var doneToday = evs.filter(function (e) { return e.at.slice(0, 10) === todayISO; }).length;
 
+    /* Une tâche peut n'entrer en service qu'à une date : la révision d'un
+       an, le rappel qu'on se met pour dans trois mois. Tant que le jour
+       n'est pas venu elle attend — elle n'est ni « jamais faite », ni en
+       retard, et n'allume aucun badge. Le premier geste noté périme cette
+       date : la fréquence prend le relais. */
+    var startMs = t.start ? parseLocal(t.start + "T00:00").getTime() : null;
+    var waiting = !last && startMs !== null && now.getTime() < startMs;
+
+    /* Le retard se dit de combien, jamais d'un simple « à faire ». */
+    function overdue(ms) {
+      var gap = Math.floor(ms / 60000);
+      return gap < 60 ? "à faire" : "en retard de " + durationLabel(gap);
+    }
+
     var state = "none", chip = "";
-    if (t.freq && t.freq.perDay) {
+    if (waiting) {
+      state = "wait";
+      chip = "le " + fmtDate.format(parseLocal(t.start + "T00:00"));
+    } else if (t.freq && t.freq.perDay) {
       state = doneToday >= t.freq.perDay ? "ok" : "due";
       chip = doneToday + " / " + t.freq.perDay + " aujourd’hui";
     } else if (t.freq && t.freq.everyH) {
-      if (!last) { state = "due"; chip = "jamais fait"; }
-      else {
+      if (!last) {
+        state = "due";
+        chip = startMs !== null ? overdue(now.getTime() - startMs) : "jamais fait";
+      } else {
         var due = parseLocal(last.at).getTime() + t.freq.everyH * 3600000;
         var gap = Math.floor(Math.abs(now.getTime() - due) / 60000);
         state = now.getTime() >= due ? "due" : "ok";
-        /* Late is the case that matters: say by how much, not just "à faire". */
         chip = state === "due"
-          ? (gap < 60 ? "à faire" : "en retard de " + durationLabel(gap))
+          ? overdue(now.getTime() - due)
           : "dans " + durationLabel(gap);
       }
+    } else if (!last && startMs !== null) {
+      /* Sans fréquence, la date vaut rappel unique : son jour venu, elle
+         réclame comme n'importe quelle tâche en retard. */
+      state = "due";
+      chip = overdue(now.getTime() - startMs);
     }
 
     var when;
@@ -1804,6 +1840,9 @@
       when = sinceLabel(Math.max(0, Math.floor((now - parseLocal(last.at)) / 60000))) +
         (w ? " · " + w : "") +
         (last.variant ? " · " + variantLabel(t, last.variant).toLowerCase() : "");
+    } else if (waiting) {
+      when = "à partir du " + fmtDate.format(parseLocal(t.start + "T00:00")) +
+        (freqText(t.freq) ? " · " + freqText(t.freq) : "");
     } else {
       when = freqText(t.freq) || "jamais noté";
     }
@@ -1990,6 +2029,8 @@
         '<span class="a-name">' + esc(t.name) + "</span>" +
         '<select data-task="' + esc(t.id) + '" aria-label="Fréquence de ' + esc(t.name) + '">' +
           freqOptions(freqKey(t.freq)) + "</select>" +
+        '<input type="date" data-startt="' + esc(t.id) + '" value="' + esc(t.start || "") +
+          '" aria-label="Première fois le, pour ' + esc(t.name) + '" />' +
         '<button class="del" type="button" data-delt="' + esc(t.id) +
           '" aria-label="Supprimer ' + esc(t.name) + '">×</button>' +
         "</div>";
@@ -1997,6 +2038,16 @@
   }
 
   $("task-admin").addEventListener("change", function (ev) {
+    var date = ev.target.closest("input[data-startt]");
+    if (date) {
+      var dt = taskById(date.getAttribute("data-startt"));
+      if (!dt) return;
+      dt.start = date.value || null;
+      save();
+      renderCare();
+      renderTabs();
+      return;
+    }
     var sel = ev.target.closest("select[data-task]");
     if (!sel) return;
     var t = taskById(sel.getAttribute("data-task"));
@@ -2039,10 +2090,13 @@
     db.tasks.push({
       id: "t" + Math.round(Math.random() * 1e9).toString(36) + db.tasks.length,
       scope: tab, name: name,
-      freq: freqFromKey($("t-freq").value), variants: null
+      freq: freqFromKey($("t-freq").value),
+      start: $("t-start").value || null,
+      variants: null
     });
     save();
     $("t-name").value = "";
+    $("t-start").value = "";
     renderCare(); renderTaskAdmin(); renderLate(); renderTabs(); renderLog();
     toast("Tâche « " + name + " » ajoutée.");
   });
