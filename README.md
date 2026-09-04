@@ -38,6 +38,12 @@ enregistrements gardent le nom qui était actif au moment du geste.
   caca, les deux — demandent laquelle avant d'enregistrer ;
 - fréquence de deux natures : « N fois par jour », qui affiche le compte du jour,
   ou « toutes les X heures », de 3 heures à 6 mois, qui affiche l'échéance ;
+- « Première fois le » repousse l'entrée en service d'une tâche à une date :
+  la révision d'un an, le rappel qu'on se met pour dans trois mois. Tant que le
+  jour n'est pas venu elle attend — ni « jamais faite », ni en retard, et aucun
+  badge. Le jour venu elle réclame comme les autres, et le premier geste noté
+  périme la date : la fréquence prend le relais. Sans fréquence, la date vaut
+  rappel unique ;
 - « Noter après coup » rattrape un oubli à sa vraie date : le bain d'hier se note
   aujourd'hui, à hier soir, et vient se ranger au bon endroit de l'historique ;
 - une tâche en retard dit **de combien** et allume le badge de son onglet ; une

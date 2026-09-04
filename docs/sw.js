@@ -5,7 +5,7 @@
  * Bump CACHE when any of those files change: the old cache is then dropped.
  */
 
-var CACHE = "chez-nous-v19";
+var CACHE = "chez-nous-v20";
 
 var SHELL = [
   ".",
